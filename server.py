@@ -68,7 +68,7 @@ app.config['SECRET_KEY'] = OAUTH2_CLIENT_SECRET
 
 def getHTML(url: str, wdfId: str, connection: MySQL):
     with connection as db:
-        lastDay = db.getLastDayContentsSQL(url)
+        lastDay = db.getLastDayContents(url)
     if not lastDay:
         return
     if "http://" in url or "https://" in url:
@@ -161,20 +161,8 @@ def authsuccess():
     return render_template("layout.html", contentTemplate="loginsuccess.html", userName='user', userId='id')
 
 
-@app.route("/profile")  # User's profile page
-def profile():
-    if request.values.get('error'):
-        return request.values['error']
-    mysql = mysqlConnection()
-    with mysql as db:
-        allUsers = db.getUsers()
-        users = {}
-        for user in allUsers:
-            users[user['wdfId']] = user
-
-    return render_template("layout.html", contentTemplate="profile.html", userName='user', userId='id')
-
 @app.route("/collect", methods=['POST'])  # Call from script
+@apiMethod
 def collect():
     if request.values.get('error'):
         return request.values['error']
@@ -182,6 +170,9 @@ def collect():
     data = request.get_json()
     mysql = mysqlConnection()
     wdfId = idOfToken(data['accessToken'])
+    if wdfId is None:
+        resp = jsonify({'error': "Not connected"})
+        return resp
     with mysql as db:
         db.pageView(wdfId, data['url'])
 
@@ -196,6 +187,7 @@ def collect():
 
 
 @app.route("/collectRequest", methods=['POST'])  # Call from script
+@apiMethod
 def collectRequest():
     if request.values.get('error'):
         return request.values['error']
@@ -203,6 +195,9 @@ def collectRequest():
     data = request.get_json()
     mysql = mysqlConnection()
     wdfId = idOfToken(data['accessToken'])
+    if wdfId is None:
+        resp = jsonify({'error': "Not connected"})
+        return resp
     with mysql as db:
         db.pageRequest(wdfId, data['url'], data['request'], data['method'])
 
@@ -212,6 +207,7 @@ def collectRequest():
     return resp
 
 @app.route("/collectEvent", methods=['POST'])  # Call from script
+@apiMethod
 def collectEvent():
     if request.values.get('error'):
         return request.values['error']
@@ -219,6 +215,9 @@ def collectEvent():
     data = request.get_json()
     mysql = mysqlConnection()
     wdfId = idOfToken(data['accessToken'])
+    if wdfId is None:
+        resp = jsonify({'error': "Not connected"})
+        return resp
     with mysql as db:
         db.pageEvent(wdfId, data['url'], data['type'], data['value'])
 
@@ -238,7 +237,6 @@ def mostVisitedSites():
     wdfId = idOfToken(wdfToken)
     if wdfId is None:
         resp = jsonify({'error': "Not connected"})
-        resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
     with mysql as db:
         mostVisited = db.getMostVisitedSites(wdfId)

@@ -14,7 +14,7 @@ contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`) VALUES (%
 # Collect Server SQL
 getUsersSQL = 'SELECT * FROM `users`'
 getContentsSQL = 'SELECT * FROM `content`'
-getLastDayContentsSQL = 'SELECT `id`, `wdfId`, `url`, `timestamp` FROM `content` WHERE url LIKE CONCAT(%s , \'%\') AND timestamp >= DATE_ADD(NOW(), INTERVAL -1 DAY)'
+getLastDayContentsSQL = 'SELECT `id`, `wdfId`, `url`, `timestamp` FROM `content` WHERE url LIKE CONCAT(%s, \'%%\') AND timestamp >= DATE_ADD(NOW(), INTERVAL -1 DAY)'
 
 newuserSQL = 'INSERT INTO users (wdfId, facebookAccessToken, wdfToken) VALUES ("%s", "%s", "%s")'
 
@@ -97,7 +97,7 @@ class MySQL:
         self.db.commit()
         return contents
 
-    def getLastDayContentsSQL(self, url):
+    def getLastDayContents(self, url):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getLastDayContentsSQL, (url))
             contents = db.fetchall()
