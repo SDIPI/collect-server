@@ -32,6 +32,8 @@ watchSQL = 'INSERT IGNORE INTO `computed_watch` (wdfId, url, time) VALUES (%s, %
 
 # Interface SQL
 mostVisitedSitesSQL = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s GROUP BY `url`'
+mostWatchedSitesSQL = 'SELECT url, time FROM `computed_watch` WHERE `wdfId`=%s'
+
 
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
@@ -154,3 +156,10 @@ class MySQL:
             db.execute(mostVisitedSitesSQL, (wdfId))
             mostVisitedSites = db.fetchall()
         return mostVisitedSites
+
+    def getMostWatchedSites(self, wdfId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(mostWatchedSitesSQL, (wdfId))
+            mostWatchedSites = db.fetchall()
+        return mostWatchedSites
+

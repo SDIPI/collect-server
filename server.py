@@ -40,10 +40,13 @@ def apiMethod(method):
     @wraps(method)
     def withCORS(*args, **kwds):
         response = method(*args, **kwds)
-        response.headers['Access-Control-Allow-Origin'] = request.environ['HTTP_ORIGIN']
+        origin = request.environ['HTTP_ORIGIN'] if ('HTTP_ORIGIN' in request.environ) else "*"
+        response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
+
     return withCORS
+
 
 def facebook_session(token=None, state=None):
     return OAuth2Session(
@@ -81,6 +84,7 @@ def mysqlConnection() -> MySQL:
     return MySQL(current_app.config['DB_HOST'], current_app.config['DB_USER'], current_app.config['DB_PASS'],
                  current_app.config['DB_NAME'])
 
+
 def idOfToken(token):
     if token is None:
         return None
@@ -90,7 +94,9 @@ def idOfToken(token):
             break
     return wdfId
 
+
 users = {}
+
 
 @app.before_first_request
 def first():
@@ -101,6 +107,7 @@ def first():
         users = {}
         for user in allUsers:
             users[user['wdfId']] = user
+
 
 ##########
 # Routes #
@@ -206,6 +213,7 @@ def collectRequest():
 
     return resp
 
+
 @app.route("/collectEvent", methods=['POST'])  # Call from script
 @apiMethod
 def collectEvent():
@@ -226,41 +234,45 @@ def collectEvent():
 
     return resp
 
-@app.route("/api/mostVisitedSites", methods=['GET'])  # Call from interface
-@apiMethod
-def mostVisitedSites():
-    if request.values.get('error'):
-        return request.values['error']
-
-    wdfToken = request.cookies.get('wdfToken')
-    mysql = mysqlConnection()
-    wdfId = idOfToken(wdfToken)
-    if wdfId is None:
-        resp = jsonify({'error': "Not connected"})
-        return resp
-    with mysql as db:
-        mostVisited = db.getMostVisitedSites(wdfId)
-
-    resp = jsonify(mostVisited)
-
-    return resp
+#
+# /api/
+#
 
 @app.route("/api/connectionState", methods=['GET'])  # Call from interface
 @apiMethod
 def connectionState():
-    if request.values.get('error'):
-        return request.values['error']
+    wdfToken = request.cookies.get('wdfToken')
+    wdfId = idOfToken(wdfToken)
+    if wdfId is None:
+        return jsonify({'error': "Not connected"})
+    return jsonify({'success': "Connected", "wdfId": wdfId})
 
+
+@app.route("/api/mostVisitedSites", methods=['GET'])  # Call from interface
+@apiMethod
+def mostVisitedSites():
     wdfToken = request.cookies.get('wdfToken')
     mysql = mysqlConnection()
     wdfId = idOfToken(wdfToken)
     if wdfId is None:
-        resp = jsonify({'error': "Not connected"})
-        return resp
+        return jsonify({'error': "Not connected"})
+    with mysql as db:
+        mostVisited = db.getMostVisitedSites(wdfId)
+    return jsonify(mostVisited)
 
-    resp = jsonify({'success': "Connected", "wdfId": wdfId})
 
-    return resp
+@app.route("/api/mostWatchedSites", methods=['GET'])  # Call from interface
+@apiMethod
+def mostWatchedSites():
+    wdfToken = request.cookies.get('wdfToken')
+    mysql = mysqlConnection()
+    wdfId = idOfToken(wdfToken)
+    if wdfId is None:
+        return jsonify({'error': "Not connected"})
+    with mysql as db:
+        mostVisited = db.getMostWatchedSites(wdfId)
+    return jsonify(mostVisited)
+
 
 @app.errorhandler(401)
 def unauthorized(e):
@@ -296,6 +308,7 @@ def utility_processor():
             return '/static/discord_logo.png'
 
     return dict(serverimg=serverimg)
+
 
 def check_auth(user):
     if user is None:
