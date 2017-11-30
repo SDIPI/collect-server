@@ -14,7 +14,7 @@ contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`) VALUES (%
 # Collect Server SQL
 getUsersSQL = 'SELECT * FROM `users`'
 getContentsSQL = 'SELECT * FROM `content`'
-getLastDayContentsSQL = 'SELECT `id`, `wdfId`, `url`, `timestamp` FROM `content` WHERE url LIKE CONCAT(%s, \'%%\') AND timestamp >= DATE_ADD(NOW(), INTERVAL -1 DAY)'
+getLastDayContentsSQL = 'SELECT `id`, `wdfId`, `url`, `timestamp` FROM `content` WHERE url LIKE CONCAT(\'%s\', \'%%\') AND timestamp >= DATE_ADD(NOW(), INTERVAL -1 DAY)'
 
 newuserSQL = 'INSERT INTO users (wdfId, facebookAccessToken, wdfToken) VALUES ("%s", "%s", "%s")'
 newOrUpdateuserSQL = "INSERT INTO users (facebookId, facebookAccessToken, wdfToken) VALUES (%(fbId)s, %(fbToken)s, %(wdfToken)s) ON DUPLICATE KEY UPDATE facebookId = %(fbId)s, facebookAccessToken = %(fbToken)s, wdfToken = %(wdfToken)s"
@@ -34,6 +34,39 @@ watchSQL = 'INSERT IGNORE INTO `computed_watch` (wdfId, url, time) VALUES (%s, %
 mostVisitedSitesSQL = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s GROUP BY `url`'
 mostWatchedSitesSQL = 'SELECT url, time FROM `computed_watch` WHERE `wdfId`=%s'
 
+nbDocumentsSQL = "SELECT COUNT(*) AS `count` FROM (SELECT DISTINCT url FROM `computed_tf`) AS `cnt`"
+
+tfIdfForUrlSQL = """SELECT
+`computed_tf`.`url` AS `url`,
+`computed_tf`.`word` AS `word`,
+`computed_tf`.`tf` AS `tf`,
+`computed_df`.`df` AS `df`,
+`computed_tf`.`tf` * LOG((SELECT COUNT(*) FROM `computed_df`) / `computed_df`.`df`) AS `tfidf`
+FROM
+`computed_tf`
+LEFT JOIN
+`computed_df`
+ON
+`computed_tf`.`word` = `computed_df`.`word`
+WHERE
+`computed_tf`.`url` = '%s'
+ORDER BY `computed_tf`.`tf` DESC"""
+
+tfDfForUserSQL = """
+SELECT
+`computed_tf`.`url` AS `url`,
+`computed_tf`.`word` AS `word`,
+`computed_tf`.`tf` AS `tf`,
+`computed_df`.`df` AS `df`
+FROM
+`computed_tf`
+LEFT JOIN
+`computed_df`
+ON
+`computed_tf`.`word` = `computed_df`.`word`
+WHERE
+`computed_tf`.`url` IN (SELECT DISTINCT url FROM `pageviews` WHERE `wdfId`=%s)
+ORDER BY `url` DESC, `tf` DESC"""
 
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
@@ -100,9 +133,9 @@ class MySQL:
             contents = db.fetchall()
         return contents
 
-    def getLastDayContents(self):
+    def getLastDayContents(self, url):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(getContentsSQL)
+            db.execute(getLastDayContentsSQL % (url))
             contents = db.fetchall()
         return contents
 
@@ -163,3 +196,20 @@ class MySQL:
             mostWatchedSites = db.fetchall()
         return mostWatchedSites
 
+    def getTfIdfForUrl(self, url):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(tfIdfForUrlSQL, (url))
+            tfIdf = db.fetchall()
+        return tfIdf
+
+    def getTfIdfForUser(self, wdfId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(tfDfForUserSQL, (wdfId))
+            tfIdf = db.fetchall()
+        return tfIdf
+
+    def getNbDocuments(self):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(nbDocumentsSQL)
+            nb = db.fetchone()
+        return nb

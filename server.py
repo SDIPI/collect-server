@@ -67,6 +67,7 @@ app = Flask(__name__)
 CORS(app)
 app.debug = True
 app.config['SECRET_KEY'] = OAUTH2_CLIENT_SECRET
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 
 def getHTML(url: str, wdfId: str, connection: MySQL):
@@ -272,6 +273,33 @@ def mostWatchedSites():
     with mysql as db:
         mostVisited = db.getMostWatchedSites(wdfId)
     return jsonify(mostVisited)
+
+
+@app.route("/api/tfIdfSites", methods=['GET'])  # Call from interface
+@apiMethod
+def tfIdfSites():
+    wdfToken = request.cookies.get('wdfToken')
+    mysql = mysqlConnection()
+    wdfId = idOfToken(wdfToken)
+    if wdfId is None:
+        return jsonify({'error': "Not connected"})
+    with mysql as db:
+        tfIdf = db.getTfIdfForUser(wdfId)
+    return jsonify(tfIdf)
+
+
+@app.route("/api/nbDocuments", methods=['GET'])  # Call from interface
+@apiMethod
+def nbDocuments():
+    wdfToken = request.cookies.get('wdfToken')
+    mysql = mysqlConnection()
+    wdfId = idOfToken(wdfToken)
+    if wdfId is None:
+        return jsonify({'error': "Not connected"})
+    with mysql as db:
+        nb = db.getNbDocuments()
+    return jsonify(nb)
+
 
 
 @app.errorhandler(401)
