@@ -9,6 +9,8 @@ from argparse import ArgumentParser
 from configparser import ConfigParser, NoOptionError
 from queue import Queue
 
+from stop_words import get_stop_words
+
 import lxml.html
 from lxml.html.clean import Cleaner
 
@@ -24,6 +26,8 @@ parser.add_argument("-w", "--password", help="Database's user password")
 parser.add_argument("-d", "--name", help="Database's name")
 
 args = parser.parse_args()
+
+stop_words = get_stop_words('en') + get_stop_words('fr')
 
 # Config file parsing
 config = ConfigParser()
@@ -92,10 +96,11 @@ class wdf_worker(threading.Thread):
         for word in words:
             word = word.lower()
             if pattern.match(word) is not None:
-                if word in tf:
-                    tf[word] += 1
-                else:
-                    tf[word] = 1
+                if word not in stop_words:
+                    if word in tf:
+                        tf[word] += 1
+                    else:
+                        tf[word] = 1
 
         return tf
 

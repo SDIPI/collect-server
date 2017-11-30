@@ -5,3 +5,4 @@ tqdm==4.10.0
 requests==2.9.1
 requests-oauthlib==0.8.0
 PyMySQL==0.7.9
+stop-words==2015.2.23.1
