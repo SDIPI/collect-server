@@ -7,6 +7,10 @@ import os
 from threading import Thread
 
 from functools import wraps
+from langdetect import detect
+
+import lxml.html
+from lxml.html.clean import Cleaner
 
 import requests
 import secrets
@@ -73,12 +77,21 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 def getHTML(url: str, wdfId: str, connection: MySQL):
     with connection as db:
         lastDay = db.getLastDayContents(url)
-    if not lastDay:
+    if lastDay:
         return
     if "http://" in url or "https://" in url:
         htmlContent = requests.get(url)
         with connection as db:
-            db.content(wdfId, url, htmlContent.text)
+            htmlParsed = lxml.html.fromstring(htmlContent.text)
+
+            cleaner = Cleaner()
+            cleaner.javascript = True
+            cleaner.style = True
+
+            text = cleaner.clean_html(htmlParsed).text_content()
+
+            lang = detect(text)
+            db.content(wdfId, url, htmlContent.text, lang)
 
 
 def mysqlConnection() -> MySQL:

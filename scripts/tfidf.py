@@ -72,7 +72,7 @@ class wdf_worker(threading.Thread):
         self.name  = "wdf_worker_"+str(id)
         self.q_in  = q_in
 
-    def computePage(self, raw_html):
+    def computePage(self, raw_html, lang):
         """
         Computes the TF of an HTML page's content and updates the IDF
         :param html: HTML of a page.
@@ -93,6 +93,11 @@ class wdf_worker(threading.Thread):
 
         tf = {}
 
+        try:
+            stop_words = get_stop_words(lang)
+        except:
+            stop_words = []
+
         for word in words:
             word = word.lower()
             if pattern.match(word) is not None:
@@ -111,7 +116,7 @@ class wdf_worker(threading.Thread):
             content = self.q_in.get()
             if content is None:
                 break
-            tf = self.computePage(content['content'])
+            tf = self.computePage(content['content'], content['lang'])
             self.q_out[content['url']] = tf
             self.q_in.task_done()
 

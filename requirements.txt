@@ -1,8 +1,9 @@
 Flask==0.12.2
 Flask-RESTful==0.3.5
 lxml==4.1.1
-tqdm==4.10.0
+langdetect==1.0.7
+PyMySQL==0.7.9
 requests==2.9.1
 requests-oauthlib==0.8.0
-PyMySQL==0.7.9
 stop-words==2015.2.23.1
+tqdm==4.10.0
