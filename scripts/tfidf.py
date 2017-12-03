@@ -105,13 +105,17 @@ class wdf_worker(threading.Thread):
             wordnet_tag ={'NN':'n','JJ':'a','VB':'v','RB':'r'}
             tagged = nltk.pos_tag(words)
             for token in tagged:
-                if token not in stop_words:
-                    try: lemma = lemmatiser.lemmatize(tagged[0], wordnet_tag[tagged[1][:2]])
-                    except: lemma = lemmatiser.lemmatize(tagged[0])
-                    if lemma in tf:
-                        tf[lemma] += 1
-                    else:
-                        tf[lemma] = 1
+                word = token[0].lower()
+                if pattern.match(word) is not None:
+                    if word not in stop_words:
+                        try:
+                            lemma = lemmatiser.lemmatize(word, wordnet_tag[token[1][:2]])
+                        except:
+                            lemma = lemmatiser.lemmatize(word)
+                        if lemma in tf:
+                            tf[lemma] += 1
+                        else:
+                            tf[lemma] = 1
 
         else:
             for word in words:
