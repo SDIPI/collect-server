@@ -8,6 +8,8 @@ import re
 from argparse import ArgumentParser
 from configparser import ConfigParser, NoOptionError
 from queue import Queue
+import nltk
+from nltk.stem import WordNetLemmatizer
 
 from stop_words import get_stop_words
 
@@ -89,7 +91,7 @@ class wdf_worker(threading.Thread):
         text = cleaner.clean_html(htmlContent).text_content()
 
         pattern = re.compile(r'[^\W\d_]+', re.U)
-        words = text.split()
+        words = nltk.word_tokenize(text)
 
         tf = {}
 
@@ -98,14 +100,28 @@ class wdf_worker(threading.Thread):
         except:
             stop_words = []
 
-        for word in words:
-            word = word.lower()
-            if pattern.match(word) is not None:
-                if word not in stop_words:
-                    if word in tf:
-                        tf[word] += 1
+        if lang == 'en':
+            lemmatiser = WordNetLemmatizer()
+            wordnet_tag ={'NN':'n','JJ':'a','VB':'v','RB':'r'}
+            tagged = nltk.pos_tag(words)
+            for token in tagged:
+                if token not in stop_words:
+                    try: lemma = lemmatiser.lemmatize(tagged[0], wordnet_tag[tagged[1][:2]])
+                    except: lemma = lemmatiser.lemmatize(tagged[0])
+                    if lemma in tf:
+                        tf[lemma] += 1
                     else:
-                        tf[word] = 1
+                        tf[lemma] = 1
+
+        else:
+            for word in words:
+                word = word.lower()
+                if pattern.match(word) is not None:
+                    if word not in stop_words:
+                        if word in tf:
+                            tf[word] += 1
+                        else:
+                            tf[word] = 1
 
         return tf
 
@@ -116,7 +132,7 @@ class wdf_worker(threading.Thread):
             content = self.q_in.get()
             if content is None:
                 break
-            tf = self.computePage(content['content'], content['lang'])
+            tf = self.computePage(content['content'], content['language'])
             self.q_out[content['url']] = tf
             self.q_in.task_done()
 

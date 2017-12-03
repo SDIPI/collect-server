@@ -2,6 +2,7 @@ Flask==0.12.2
 Flask-RESTful==0.3.5
 lxml==4.1.1
 langdetect==1.0.7
+nltk==3.2.5
 PyMySQL==0.7.9
 requests==2.9.1
 requests-oauthlib==0.8.0

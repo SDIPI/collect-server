@@ -14,6 +14,12 @@ Admitting you invoke python using `python3.6`, install the required dependencies
 python3.6 -m pip install -r requirements.txt
 ```
 
+After that, download the nltk entire corpus :
+
+```
+python3.6 -m nltk.downloader all
+```
+
 You'll also need to set some parameters :
 
 - Rename the **file** `config.ini.example` to `config.ini` and fill in the informations to connect to your MySQL database.
