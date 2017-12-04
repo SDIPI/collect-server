@@ -10,6 +10,8 @@ pageviewSQL = 'INSERT INTO pageviews (wdfId, url, timestamp) VALUES (%s, %s, CUR
 pagerequestSQL = 'INSERT INTO pagerequests (wdfId, url, timestamp, request, method) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s)'
 pageeventSQL = 'INSERT INTO `event` (wdfId, url, type, `value`) VALUES (%s, %s, %s, %s)'
 contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`, `language`, `title`) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s)'
+watcheventSQL = 'INSERT INTO `pagewatch` (wdfId, url, timestamp, amount) VALUES (%s, %s, CURRENT_TIMESTAMP, %s)'
+
 
 # Collect Server SQL
 getUsersSQL = 'SELECT * FROM `users`'
@@ -104,6 +106,14 @@ class MySQL:
     def pageEvent(self, wdfId, url, eventType, value):
         with self.db.cursor() as db:
             db.execute(pageeventSQL, (wdfId, url, eventType, value))
+        self.db.commit()
+
+    def watchEvents(self, wdfId, urls):
+        list = []
+        for url in urls:
+            list.append((wdfId, url, urls[url]))
+        with self.db.cursor() as db:
+            db.executemany(watcheventSQL, list)
         self.db.commit()
 
     def content(self, wdfId, url, content, lang, title):

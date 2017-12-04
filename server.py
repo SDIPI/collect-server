@@ -206,7 +206,6 @@ def collect():
     thread.start()
 
     resp = Response('{"result":"ok"}')
-    resp.headers['Access-Control-Allow-Origin'] = '*'
 
     return resp
 
@@ -227,7 +226,6 @@ def collectRequest():
         db.pageRequest(wdfId, data['url'], data['request'], data['method'])
 
     resp = Response('{"result":"ok"}')
-    resp.headers['Access-Control-Allow-Origin'] = '*'
 
     return resp
 
@@ -248,7 +246,26 @@ def collectEvent():
         db.pageEvent(wdfId, data['url'], data['type'], data['value'])
 
     resp = Response('{"result":"ok"}')
-    resp.headers['Access-Control-Allow-Origin'] = '*'
+
+    return resp
+
+
+@app.route("/collectWatch", methods=['POST'])  # Call from script
+@apiMethod
+def collectWatch():
+    if request.values.get('error'):
+        return request.values['error']
+
+    data = request.get_json()
+    mysql = mysqlConnection()
+    wdfId = idOfToken(data['accessToken'])
+    if wdfId is None:
+        resp = jsonify({'error': "Not connected"})
+        return resp
+    with mysql as db:
+        db.watchEvents(wdfId, data['value'])
+
+    resp = Response('{"result":"ok"}')
 
     return resp
 
