@@ -83,6 +83,10 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
         htmlContent = requests.get(url)
         with connection as db:
             htmlParsed = lxml.html.fromstring(htmlContent.text)
+            try:
+                title = htmlParsed.find(".//title").text
+            except:
+                title = ""
 
             cleaner = Cleaner()
             cleaner.javascript = True
@@ -91,7 +95,7 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
             text = cleaner.clean_html(htmlParsed).text_content()
 
             lang = detect(text)
-            db.content(wdfId, url, htmlContent.text, lang)
+            db.content(wdfId, url, htmlContent.text, lang, title)
 
 
 def mysqlConnection() -> MySQL:

@@ -9,7 +9,7 @@ import pymysql as pymysql
 pageviewSQL = 'INSERT INTO pageviews (wdfId, url, timestamp) VALUES (%s, %s, CURRENT_TIMESTAMP)'
 pagerequestSQL = 'INSERT INTO pagerequests (wdfId, url, timestamp, request, method) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s)'
 pageeventSQL = 'INSERT INTO `event` (wdfId, url, type, `value`) VALUES (%s, %s, %s, %s)'
-contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`, `language`) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s)'
+contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`, `language`, `title`) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s)'
 
 # Collect Server SQL
 getUsersSQL = 'SELECT * FROM `users`'
@@ -106,9 +106,9 @@ class MySQL:
             db.execute(pageeventSQL, (wdfId, url, eventType, value))
         self.db.commit()
 
-    def content(self, wdfId, url, content, lang):
+    def content(self, wdfId, url, content, lang, title):
         with self.db.cursor() as db:
-            db.execute(contentSQL, (wdfId, url, content, lang))
+            db.execute(contentSQL, (wdfId, url, content, lang, title))
         self.db.commit()
 
     def newUser(self, wdfId, fbToken, wdfToken):
