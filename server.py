@@ -162,7 +162,7 @@ def auth():
             db.newOrUpdateUser(user['id'], token['access_token'], wdf_token)
 
         response = redirect('/authsuccess?code=' + wdf_token)
-        response.set_cookie('wdfToken', wdf_token, 60 * 60 * 24 * 365 * 10, domain="git .sdipi.ch")
+        response.set_cookie('wdfToken', wdf_token, 60 * 60 * 24 * 365 * 10, domain=".sdipi.ch")
         return response
 
     except MissingCodeError:
