@@ -12,7 +12,6 @@ pageeventSQL = 'INSERT INTO `event` (wdfId, url, type, `value`) VALUES (%s, %s, 
 contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`, `language`, `title`) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s)'
 watcheventSQL = 'INSERT INTO `pagewatch` (wdfId, url, timestamp, amount) VALUES (%s, %s, CURRENT_TIMESTAMP, %s)'
 
-
 # Collect Server SQL
 getUsersSQL = 'SELECT * FROM `users`'
 getContentsSQL = 'SELECT * FROM `content`'
@@ -69,6 +68,16 @@ ON
 WHERE
 `computed_tf`.`url` IN (SELECT DISTINCT url FROM `pageviews` WHERE `wdfId`=%s)
 ORDER BY `url` DESC, `tf` DESC"""
+
+historySitesSQL = """
+SELECT
+`wdfId`,
+`url`, DATE(timestamp) AS day,
+CAST(SUM(`amount`) as UNSIGNED) AS sumAmount
+FROM `pagewatch`
+WHERE `wdfId` = %s
+GROUP BY `url`, DATE(timestamp)
+ORDER BY DATE(timestamp) ASC, SUM(`amount`) DESC"""
 
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
@@ -223,3 +232,9 @@ class MySQL:
             db.execute(nbDocumentsSQL)
             nb = db.fetchone()
         return nb
+
+    def getHistorySites(self, wdfId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(historySitesSQL, (wdfId))
+            history = db.fetchall()
+        return history

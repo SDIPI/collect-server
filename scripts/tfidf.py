@@ -80,6 +80,8 @@ class wdf_worker(threading.Thread):
         :param html: HTML of a page.
         :return: 
         """
+        # Add spaces before closing tags.
+        re.sub("</", " </", raw_html)
 
         # Parse the HTML
         htmlContent = lxml.html.fromstring(raw_html)
@@ -106,6 +108,8 @@ class wdf_worker(threading.Thread):
             tagged = nltk.pos_tag(words)
             for token in tagged:
                 word = token[0].lower()
+                if len(word) < 2:
+                    continue
                 if pattern.match(word) is not None:
                     if word not in stop_words:
                         try:

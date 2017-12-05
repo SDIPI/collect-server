@@ -79,7 +79,7 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
         lastDay = db.getLastDayContents(url)
     if lastDay:
         return
-    if "http://" in url or "https://" in url:
+    if ("http://" in url or "https://" in url) and (url[:17] != "http://localhost:" and url[:17] != "http://localhost/"):
         htmlContent = requests.get(url)
         with connection as db:
             htmlParsed = lxml.html.fromstring(htmlContent.text)
@@ -320,6 +320,19 @@ def tfIdfSites():
     with mysql as db:
         tfIdf = db.getTfIdfForUser(wdfId)
     return jsonify(tfIdf)
+
+
+@app.route("/api/historySites", methods=['GET'])  # Call from interface
+@apiMethod
+def historySites():
+    wdfToken = request.cookies.get('wdfToken')
+    mysql = mysqlConnection()
+    wdfId = idOfToken(wdfToken)
+    if wdfId is None:
+        return jsonify({'error': "Not connected"})
+    with mysql as db:
+        history = db.getHistorySites(wdfId)
+    return jsonify(history)
 
 
 @app.route("/api/nbDocuments", methods=['GET'])  # Call from interface
