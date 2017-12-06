@@ -84,11 +84,14 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
         return
     if ("http://" in url or "https://" in url) and (url[:17] != "http://localhost:" and url[:17] != "http://localhost/"):
         # Detect if content is even HTML
-        contentHead = requests.head(url)
+        customHeaders = {
+            'User-Agent': 'server:ch.sdipi.wdf:v3.1.0 (by /u/protectator)',
+        }
+        contentHead = requests.head(url, headers=customHeaders)
         if 'html' not in contentHead.headers['content-type']:
             return
 
-        htmlContent = requests.get(url)
+        htmlContent = requests.get(url, headers=customHeaders)
         with connection as db:
             htmlParsed = lxml.html.fromstring(htmlContent.text)
             try:
