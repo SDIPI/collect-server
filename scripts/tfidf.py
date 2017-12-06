@@ -4,17 +4,9 @@
 This file is part of wdf-server.
 """
 import threading
-import re
 from argparse import ArgumentParser
 from configparser import ConfigParser, NoOptionError
 from queue import Queue
-import nltk
-from nltk.stem import WordNetLemmatizer
-
-from stop_words import get_stop_words
-
-import lxml.html
-from lxml.html.clean import Cleaner
 
 from mysql import MySQL
 
@@ -28,8 +20,6 @@ parser.add_argument("-w", "--password", help="Database's user password")
 parser.add_argument("-d", "--name", help="Database's name")
 
 args = parser.parse_args()
-
-stop_words = get_stop_words('en') + get_stop_words('fr')
 
 # Config file parsing
 config = ConfigParser()
@@ -74,62 +64,19 @@ class wdf_worker(threading.Thread):
         self.name  = "wdf_worker_"+str(id)
         self.q_in  = q_in
 
-    def computePage(self, raw_html, lang):
+    def computeDocument(self, text):
         """
-        Computes the TF of an HTML page's content and updates the IDF
-        :param html: HTML of a page.
+        Computes the TF of an document's content
+        :param text: Cleaned text of a page.
         :return: 
         """
-        # Add spaces before closing tags.
-        re.sub("</", " </", raw_html)
-
-        # Parse the HTML
-        htmlContent = lxml.html.fromstring(raw_html)
-
-        cleaner = Cleaner()
-        cleaner.javascript = True
-        cleaner.style = True
-
-        text = cleaner.clean_html(htmlContent).text_content()
-
-        pattern = re.compile(r'[^\W\d_]+', re.U)
-        words = nltk.word_tokenize(text)
-
         tf = {}
-
-        try:
-            stop_words = get_stop_words(lang)
-        except:
-            stop_words = []
-
-        if lang == 'en':
-            lemmatiser = WordNetLemmatizer()
-            wordnet_tag ={'NN':'n','JJ':'a','VB':'v','RB':'r'}
-            tagged = nltk.pos_tag(words)
-            for token in tagged:
-                word = token[0].lower()
-                if len(word) < 2:
-                    continue
-                if pattern.match(word) is not None:
-                    if word not in stop_words:
-                        try:
-                            lemma = lemmatiser.lemmatize(word, wordnet_tag[token[1][:2]])
-                        except:
-                            lemma = lemmatiser.lemmatize(word)
-                        if lemma in tf:
-                            tf[lemma] += 1
-                        else:
-                            tf[lemma] = 1
-
-        else:
-            for word in words:
-                word = word.lower()
-                if pattern.match(word) is not None:
-                    if word not in stop_words:
-                        if word in tf:
-                            tf[word] += 1
-                        else:
-                            tf[word] = 1
+        tokens = text.split()
+        for token in tokens:
+            if token in tf:
+                tf[token] += 1
+            else:
+                tf[token] = 1
 
         return tf
 
@@ -140,7 +87,7 @@ class wdf_worker(threading.Thread):
             content = self.q_in.get()
             if content is None:
                 break
-            tf = self.computePage(content['content'], content['language'])
+            tf = self.computeDocument(content['content'])
             self.q_out[content['url']] = tf
             self.q_in.task_done()
 
@@ -149,7 +96,7 @@ tfs = {}
 
 mysql = mysqlConnection()
 with mysql as db:
-    content = db.getContents()
+    content = db.getContentsText()
 
 for item in content:
     q_in.put(item)

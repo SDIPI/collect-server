@@ -11,10 +11,12 @@ pagerequestSQL = 'INSERT INTO pagerequests (wdfId, url, timestamp, request, meth
 pageeventSQL = 'INSERT INTO `event` (wdfId, url, type, `value`) VALUES (%s, %s, %s, %s)'
 contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`, `language`, `title`) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s)'
 watcheventSQL = 'INSERT INTO `pagewatch` (wdfId, url, timestamp, amount) VALUES (%s, %s, CURRENT_TIMESTAMP, %s)'
+contentTextSQL = 'INSERT IGNORE INTO `content_text` (url, `content`, `title`, `language`) VALUES (%s, %s, %s, %s)'
 
 # Collect Server SQL
 getUsersSQL = 'SELECT * FROM `users`'
 getContentsSQL = 'SELECT * FROM `content`'
+getContentsTextSQL = 'SELECT * FROM `content_text`'
 getLastDayContentsSQL = 'SELECT `id`, `wdfId`, `url`, `timestamp` FROM `content` WHERE url LIKE CONCAT(\'%s\', \'%%\') AND timestamp >= DATE_ADD(NOW(), INTERVAL -1 DAY)'
 
 newuserSQL = 'INSERT INTO users (wdfId, facebookAccessToken, wdfToken) VALUES ("%s", "%s", "%s")'
@@ -152,6 +154,12 @@ class MySQL:
             contents = db.fetchall()
         return contents
 
+    def getContentsText(self):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(getContentsTextSQL)
+            contents = db.fetchall()
+        return contents
+
     def getLastDayContents(self, url):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getLastDayContentsSQL % (url))
@@ -201,6 +209,11 @@ class MySQL:
     def setWatch(self, watchs):
         with self.db.cursor() as db:
             db.executemany(watchSQL, watchs)
+        self.db.commit()
+
+    def setContentText(self, url, text, title, language):
+        with self.db.cursor() as db:
+            db.execute(contentTextSQL, (url, text, title, language))
         self.db.commit()
 
     def getMostVisitedSites(self, wdfId):

@@ -12,12 +12,15 @@ from langdetect import detect
 import lxml.html
 from lxml.html.clean import Cleaner
 
+from stop_words import get_stop_words
+
 import requests
 import secrets
 from flask import Flask, render_template, request, session, redirect, abort, current_app, Response, jsonify
 from flask_cors import CORS
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import MissingCodeError
+from utils import clean_html
 
 from mysql import MySQL
 
@@ -80,6 +83,11 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
     if lastDay:
         return
     if ("http://" in url or "https://" in url) and (url[:17] != "http://localhost:" and url[:17] != "http://localhost/"):
+        # Detect if content is even HTML
+        contentHead = requests.head(url)
+        if 'html' not in contentHead.headers['content-type']:
+            return
+
         htmlContent = requests.get(url)
         with connection as db:
             htmlParsed = lxml.html.fromstring(htmlContent.text)
@@ -91,11 +99,16 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
             cleaner = Cleaner()
             cleaner.javascript = True
             cleaner.style = True
+            textClean = cleaner.clean_html(htmlParsed).text_content()
 
-            text = cleaner.clean_html(htmlParsed).text_content()
-
-            lang = detect(text)
+            lang = detect(textClean)
+            try:
+                stop_words = get_stop_words(lang)
+            except:
+                stop_words = []
+            bestText = clean_html(htmlContent.text, stop_words, (lang == 'en'))
             db.content(wdfId, url, htmlContent.text, lang, title)
+            db.setContentText(url, bestText, title, lang)
 
 
 def mysqlConnection() -> MySQL:
