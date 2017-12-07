@@ -36,6 +36,7 @@ watchSQL = 'INSERT IGNORE INTO `computed_watch` (wdfId, url, time) VALUES (%s, %
 # Interface SQL
 mostVisitedSitesSQL = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s GROUP BY `url`'
 mostWatchedSitesSQL = 'SELECT `wdfId`, `url`, CAST(SUM(`amount`) AS UNSIGNED) AS time FROM `pagewatch` WHERE wdfId=%s GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC'
+topDocsForUserSQL = ''
 
 nbDocumentsSQL = "SELECT COUNT(*) AS `count` FROM (SELECT DISTINCT url FROM `computed_tf`) AS `cnt`"
 
@@ -239,6 +240,12 @@ class MySQL:
             db.execute(tfDfForUserSQL, (wdfId))
             tfIdf = db.fetchall()
         return tfIdf
+
+    def getTopDocuments(self, wdfId, topNb):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(topDocsForUserSQL, (wdfId, topNb))
+            docs = db.fetchall()
+        return docs
 
     def getNbDocuments(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:

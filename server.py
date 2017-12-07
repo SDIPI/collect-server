@@ -7,6 +7,8 @@ import os
 from threading import Thread
 
 from functools import wraps
+
+import math
 from langdetect import detect
 
 import lxml.html
@@ -20,6 +22,8 @@ from flask import Flask, render_template, request, session, redirect, abort, cur
 from flask_cors import CORS
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2 import MissingCodeError
+
+from lda import LDAWDF
 from utils import clean_html
 
 from mysql import MySQL
@@ -129,18 +133,32 @@ def idOfToken(token):
     return wdfId
 
 
+def tfIdf(tf, df, documents):
+    return tf * math.log(documents / df)
+
+
 users = {}
+lda: LDAWDF = None
 
 
 @app.before_first_request
 def first():
-    global users
+    global users, lda
     mysql = mysqlConnection()
+    lda = LDAWDF(mysql)
     with mysql as db:
         allUsers = db.getUsers()
         users = {}
         for user in allUsers:
             users[user['wdfId']] = user
+    if lda.canLoad():
+        print("Loading local LDA Model...")
+        lda.load()
+    else:
+        print("No LDA Model found. Learning from DB...")
+        lda.trainFromStart()
+        print("Saving the model.")
+        lda.save()
 
 
 ##########
@@ -336,6 +354,34 @@ def tfIdfSites():
     with mysql as db:
         tfIdf = db.getTfIdfForUser(wdfId)
     return jsonify(tfIdf)
+
+
+@app.route("/api/interests", methods=['GET'])  # Call from interface
+@apiMethod
+def interests():
+    wdfToken = request.cookies.get('wdfToken')
+    mysql = mysqlConnection()
+    wdfId = idOfToken(wdfToken)
+    if wdfId is None:
+        return jsonify({'error': "Not connected"})
+    with mysql as db:
+        mostWatched = db.getMostWatchedSites(wdfId)[:100]
+        tfIdfData = db.getTfIdfForUser(wdfId)
+        nb = db.getNbDocuments()['count']
+        w = {}
+        wList = []
+        for word in tfIdfData:
+            if word['word']in w:
+                w[word['word']] += tfIdf(word['tf'], word['df'], nb)
+            else:
+                w[word['word']] = tfIdf(word['tf'], word['df'], nb)
+        for el in w:
+            wList.append({'word': el, 'weight': w[el]})
+
+        wList.sort(key=lambda x: x['weight'], reverse=True)
+        wWords = [el['word'] for el in wList]
+        topics = lda.get_terms_topics(wWords)
+    return jsonify(topics)
 
 
 @app.route("/api/historySites", methods=['GET'])  # Call from interface
