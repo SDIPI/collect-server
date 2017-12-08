@@ -35,7 +35,7 @@ class LDAWDF:
         doc_term_matrix = [self.dictionary.doc2bow(doc) for doc in documents]
 
         # Running and Trainign LDA model on the document term matrix.
-        self.ldamodel = gensim.models.ldamodel.LdaModel(doc_term_matrix, num_topics=10, id2word=self.dictionary, passes=50)
+        self.ldamodel = gensim.models.ldamodel.LdaModel(doc_term_matrix, num_topics=5, id2word=self.dictionary, passes=50)
 
     def printTest(self):
         print(self.ldamodel.print_topics(num_topics=10, num_words=8))
@@ -60,7 +60,7 @@ class LDAWDF:
         return self.ldamodel.get_document_topics(document)
 
     def get_terms_topics(self, keywords):
-        bow = self.dictionary.doc2bow(keywords[:20])
+        bow = self.dictionary.doc2bow(keywords[:30])
         topics = {}
         keywordsResult = {}
         for word in bow:
