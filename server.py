@@ -18,6 +18,7 @@ from stop_words import get_stop_words
 
 import requests
 import secrets
+import re
 from flask import Flask, render_template, request, session, redirect, abort, current_app, Response, jsonify
 from flask_cors import CORS
 from requests_oauthlib import OAuth2Session
@@ -45,6 +46,10 @@ if 'http://' in OAUTH2_REDIRECT_URI:
 
 def token_updater(token):
     session['oauth2_token'] = token
+
+
+import re
+datePattern = re.compile("^\d{1,4}-\d{1,2}-\d{1,2}$")
 
 
 def apiMethod(method):
@@ -328,9 +333,15 @@ def connectionState(wdfId):
 @userConnected
 @apiMethod
 def mostVisitedSites(wdfId):
+    fromArg = request.args.get('from')
+    toArg = request.args.get('to')
+    if fromArg and not datePattern.match(fromArg):
+        return jsonify({'error': "Incorrect parameter from"})
+    if toArg and not datePattern.match(toArg):
+        return jsonify({'error': "Incorrect parameter to"})
     mysql = mysqlConnection()
     with mysql as db:
-        mostVisited = db.getMostVisitedSites(wdfId)
+        mostVisited = db.getMostVisitedSites(wdfId, fromArg, toArg)
     return jsonify(mostVisited)
 
 
@@ -338,9 +349,15 @@ def mostVisitedSites(wdfId):
 @userConnected
 @apiMethod
 def mostWatchedSites(wdfId):
+    fromArg = request.args.get('from')
+    toArg = request.args.get('to')
+    if fromArg and not datePattern.match(fromArg):
+        return jsonify({'error': "Incorrect parameter from"})
+    if toArg and not datePattern.match(toArg):
+        return jsonify({'error': "Incorrect parameter to"})
     mysql = mysqlConnection()
     with mysql as db:
-        mostVisited = db.getMostWatchedSites(wdfId)
+        mostVisited = db.getMostWatchedSites(wdfId, fromArg, toArg)
     return jsonify(mostVisited)
 
 

@@ -33,7 +33,22 @@ dfSQL = 'INSERT IGNORE INTO `computed_df` (word, df) VALUES (%s, %s)'
 # Interface SQL
 mostVisitedSitesSQL = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s GROUP BY `url`'
 mostWatchedSitesSQL = 'SELECT `wdfId`, `url`, CAST(SUM(`amount`) AS UNSIGNED) AS time FROM `pagewatch` WHERE wdfId=%s GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC'
+mostVisitedSitesTemplateSQL1 = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s'
+mostVisitedSitesTemplateSQL2 = ' GROUP BY `url`'
+mostWatchedSitesTemplateSQL1 = 'SELECT `wdfId`, `url`, CAST(SUM(`amount`) AS UNSIGNED) AS time FROM `pagewatch` WHERE wdfId=%s'
+mostWatchedSitesTemplateSQL2 = ' GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC'
+
 oldestEntrySQL = 'SELECT DATE(`timestamp`) AS date FROM `pageviews` WHERE `wdfId`=%s ORDER BY `timestamp` ASC LIMIT 1'
+
+historySitesSQL = """
+SELECT
+`wdfId`,
+`url`, DATE(timestamp) AS day,
+CAST(SUM(`amount`) as UNSIGNED) AS sumAmount
+FROM `pagewatch`
+WHERE `wdfId` = %s
+GROUP BY `url`, DATE(timestamp)
+ORDER BY DATE(timestamp) ASC, SUM(`amount`) DESC"""
 
 nbDocumentsSQL = "SELECT COUNT(*) AS `count` FROM (SELECT DISTINCT url FROM `computed_tf`) AS `cnt`"
 
@@ -68,16 +83,6 @@ ON
 WHERE
 `computed_tf`.`url` IN (SELECT DISTINCT url FROM `pageviews` WHERE `wdfId`=%s)
 ORDER BY `url` DESC, `tf` DESC"""
-
-historySitesSQL = """
-SELECT
-`wdfId`,
-`url`, DATE(timestamp) AS day,
-CAST(SUM(`amount`) as UNSIGNED) AS sumAmount
-FROM `pagewatch`
-WHERE `wdfId` = %s
-GROUP BY `url`, DATE(timestamp)
-ORDER BY DATE(timestamp) ASC, SUM(`amount`) DESC"""
 
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
@@ -190,14 +195,18 @@ class MySQL:
             db.execute(contentTextSQL, (url, text, title, language))
         self.db.commit()
 
-    def getMostVisitedSites(self, wdfId):
+    def getMostVisitedSites(self, wdfId, fromArg, toArg):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(mostVisitedSitesSQL, (wdfId))
+            timeConditions = self.__timeCondition(fromArg, toArg)
+            query = mostVisitedSitesTemplateSQL1 + timeConditions + mostVisitedSitesTemplateSQL2
+            db.execute(query, (wdfId))
             return db.fetchall()
 
-    def getMostWatchedSites(self, wdfId):
+    def getMostWatchedSites(self, wdfId, fromArg, toArg):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(mostWatchedSitesSQL, (wdfId))
+            timeConditions = self.__timeCondition(fromArg, toArg)
+            query = mostWatchedSitesTemplateSQL1 + timeConditions + mostWatchedSitesTemplateSQL2
+            db.execute(query, (wdfId))
             return db.fetchall()
 
     def getTfIdfForUrl(self, url):
@@ -224,3 +233,11 @@ class MySQL:
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(oldestEntrySQL, (wdfId))
             return db.fetchone()
+
+    def __timeCondition(self, fromArg, toArg):
+        result = ""
+        if fromArg is not None:
+            result += " AND `timestamp` >= '" + fromArg + " 00:00:00' "
+        if toArg is not None:
+            result += " AND `timestamp` <= '" + toArg + " 00:00:00' "
+        return result
