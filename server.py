@@ -55,8 +55,18 @@ def apiMethod(method):
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
-
     return withCORS
+
+
+def userConnected(method):
+    @wraps(method)
+    def with_userConnected(*args, **kwds):
+        wdfToken = request.cookies.get('wdfToken')
+        wdfId = idOfToken(wdfToken)
+        if wdfId is None:
+            return jsonify({'error': "Not connected"})
+        return method(wdfId, *args, **kwds)
+    return with_userConnected
 
 
 def facebook_session(token=None, state=None):
@@ -308,64 +318,48 @@ def collectWatch():
 #
 
 @app.route("/api/connectionState", methods=['GET'])  # Call from interface
+@userConnected
 @apiMethod
-def connectionState():
-    wdfToken = request.cookies.get('wdfToken')
-    wdfId = idOfToken(wdfToken)
-    if wdfId is None:
-        return jsonify({'error': "Not connected"})
+def connectionState(wdfId):
     return jsonify({'success': "Connected", "wdfId": wdfId})
 
 
 @app.route("/api/mostVisitedSites", methods=['GET'])  # Call from interface
+@userConnected
 @apiMethod
-def mostVisitedSites():
-    wdfToken = request.cookies.get('wdfToken')
+def mostVisitedSites(wdfId):
     mysql = mysqlConnection()
-    wdfId = idOfToken(wdfToken)
-    if wdfId is None:
-        return jsonify({'error': "Not connected"})
     with mysql as db:
         mostVisited = db.getMostVisitedSites(wdfId)
     return jsonify(mostVisited)
 
 
 @app.route("/api/mostWatchedSites", methods=['GET'])  # Call from interface
+@userConnected
 @apiMethod
-def mostWatchedSites():
-    wdfToken = request.cookies.get('wdfToken')
+def mostWatchedSites(wdfId):
     mysql = mysqlConnection()
-    wdfId = idOfToken(wdfToken)
-    if wdfId is None:
-        return jsonify({'error': "Not connected"})
     with mysql as db:
         mostVisited = db.getMostWatchedSites(wdfId)
     return jsonify(mostVisited)
 
 
 @app.route("/api/tfIdfSites", methods=['GET'])  # Call from interface
+@userConnected
 @apiMethod
-def tfIdfSites():
-    wdfToken = request.cookies.get('wdfToken')
+def tfIdfSites(wdfId):
     mysql = mysqlConnection()
-    wdfId = idOfToken(wdfToken)
-    if wdfId is None:
-        return jsonify({'error': "Not connected"})
     with mysql as db:
         tfIdf = db.getTfIdfForUser(wdfId)
     return jsonify(tfIdf)
 
 
 @app.route("/api/interests", methods=['GET'])  # Call from interface
+@userConnected
 @apiMethod
-def interests():
-    wdfToken = request.cookies.get('wdfToken')
+def interests(wdfId):
     mysql = mysqlConnection()
-    wdfId = idOfToken(wdfToken)
-    if wdfId is None:
-        return jsonify({'error': "Not connected"})
     with mysql as db:
-        mostWatched = db.getMostWatchedSites(wdfId)[:100]
         tfIdfData = db.getTfIdfForUser(wdfId)
         nb = db.getNbDocuments()['count']
         w = {}
@@ -385,30 +379,32 @@ def interests():
 
 
 @app.route("/api/historySites", methods=['GET'])  # Call from interface
+@userConnected
 @apiMethod
-def historySites():
-    wdfToken = request.cookies.get('wdfToken')
+def historySites(wdfId):
     mysql = mysqlConnection()
-    wdfId = idOfToken(wdfToken)
-    if wdfId is None:
-        return jsonify({'error': "Not connected"})
     with mysql as db:
         history = db.getHistorySites(wdfId)
     return jsonify(history)
 
 
+@app.route("/api/oldestEntry", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def oldestEntry(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        oldest = db.getOldestEntry(wdfId)
+    return jsonify(oldest)
+
+
 @app.route("/api/nbDocuments", methods=['GET'])  # Call from interface
 @apiMethod
 def nbDocuments():
-    wdfToken = request.cookies.get('wdfToken')
     mysql = mysqlConnection()
-    wdfId = idOfToken(wdfToken)
-    if wdfId is None:
-        return jsonify({'error': "Not connected"})
     with mysql as db:
         nb = db.getNbDocuments()
     return jsonify(nb)
-
 
 
 @app.errorhandler(401)

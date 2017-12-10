@@ -27,16 +27,13 @@ emptyTfTableSQL = "TRUNCATE computed_tf"
 emptyDfTableSQL = "TRUNCATE computed_df"
 emptyWatchTableSQL = "TRUNCATE computed_watch"
 
-getUserVisibilitySQL = "SELECT * FROM `event` WHERE `wdfId` = %s AND `type` LIKE 'visibility' ORDER BY `timestamp` ASC"
-
 tfSQL = 'INSERT IGNORE INTO `computed_tf` (url, word, tf) VALUES (%s, %s, %s)'
 dfSQL = 'INSERT IGNORE INTO `computed_df` (word, df) VALUES (%s, %s)'
-watchSQL = 'INSERT IGNORE INTO `computed_watch` (wdfId, url, time) VALUES (%s, %s, %s)'
 
 # Interface SQL
 mostVisitedSitesSQL = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s GROUP BY `url`'
 mostWatchedSitesSQL = 'SELECT `wdfId`, `url`, CAST(SUM(`amount`) AS UNSIGNED) AS time FROM `pagewatch` WHERE wdfId=%s GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC'
-topDocsForUserSQL = ''
+oldestEntrySQL = 'SELECT DATE(`timestamp`) AS date FROM `pageviews` WHERE `wdfId`=%s ORDER BY `timestamp` ASC LIMIT 1'
 
 nbDocumentsSQL = "SELECT COUNT(*) AS `count` FROM (SELECT DISTINCT url FROM `computed_tf`) AS `cnt`"
 
@@ -146,46 +143,27 @@ class MySQL:
     def getUsers(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getUsersSQL)
-            users = db.fetchall()
-        return users
+            return db.fetchall()
 
     def getContents(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getContentsSQL)
-            contents = db.fetchall()
-        return contents
+            return db.fetchall()
 
     def getContentsText(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getContentsTextSQL)
-            contents = db.fetchall()
-        return contents
+            return db.fetchall()
 
     def getLastDayContents(self, url):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getLastDayContentsSQL % (url))
-            contents = db.fetchall()
-        return contents
-
-    def getVisibilityEventsByUser(self):
-        events = {}
-        with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(getUsersSQL)
-            users = db.fetchall()
-            for user in users:
-                db.execute(getUserVisibilitySQL, (user['wdfId']))
-                events[user['wdfId']] = db.fetchall()
-        return events
+            return db.fetchall()
 
     def emptyTfDf(self):
         with self.db.cursor() as db:
             db.execute(emptyTfTableSQL)
             db.execute(emptyDfTableSQL)
-        self.db.commit()
-
-    def emptyWatch(self):
-        with self.db.cursor() as db:
-            db.execute(emptyWatchTableSQL)
         self.db.commit()
 
     def setTf(self, tfs):
@@ -207,11 +185,6 @@ class MySQL:
             db.executemany(dfSQL, list)
         self.db.commit()
 
-    def setWatch(self, watchs):
-        with self.db.cursor() as db:
-            db.executemany(watchSQL, watchs)
-        self.db.commit()
-
     def setContentText(self, url, text, title, language):
         with self.db.cursor() as db:
             db.execute(contentTextSQL, (url, text, title, language))
@@ -220,41 +193,34 @@ class MySQL:
     def getMostVisitedSites(self, wdfId):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(mostVisitedSitesSQL, (wdfId))
-            mostVisitedSites = db.fetchall()
-        return mostVisitedSites
+            return db.fetchall()
 
     def getMostWatchedSites(self, wdfId):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(mostWatchedSitesSQL, (wdfId))
-            mostWatchedSites = db.fetchall()
-        return mostWatchedSites
+            return db.fetchall()
 
     def getTfIdfForUrl(self, url):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(tfIdfForUrlSQL, (url))
-            tfIdf = db.fetchall()
-        return tfIdf
+            return db.fetchall()
 
     def getTfIdfForUser(self, wdfId):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(tfDfForUserSQL, (wdfId))
-            tfIdf = db.fetchall()
-        return tfIdf
-
-    def getTopDocuments(self, wdfId, topNb):
-        with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(topDocsForUserSQL, (wdfId, topNb))
-            docs = db.fetchall()
-        return docs
+            return db.fetchall()
 
     def getNbDocuments(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(nbDocumentsSQL)
-            nb = db.fetchone()
-        return nb
+            return db.fetchone()
 
     def getHistorySites(self, wdfId):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(historySitesSQL, (wdfId))
-            history = db.fetchall()
-        return history
+            return db.fetchall()
+
+    def getOldestEntry(self, wdfId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(oldestEntrySQL, (wdfId))
+            return db.fetchone()
