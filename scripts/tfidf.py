@@ -7,6 +7,7 @@ import threading
 from argparse import ArgumentParser
 from configparser import ConfigParser, NoOptionError
 from queue import Queue
+from math import log
 
 from mysql import MySQL
 
@@ -94,6 +95,8 @@ class wdf_worker(threading.Thread):
 q_in = Queue()
 tfs = {}
 
+print("Connecting to database")
+
 mysql = mysqlConnection()
 with mysql as db:
     content = db.getContentsText()
@@ -105,12 +108,16 @@ for i in range(3):
     t = wdf_worker(q_in, i, tfs)
     t.start()
 
+print("Computing TF : Workers started...")
+
 q_in.join()
 
 for i in range(3):
     q_in.put(None)
 
 df = {}
+
+print("Computing DF...")
 
 for url in tfs:
     terms = tfs[url]
@@ -120,7 +127,24 @@ for url in tfs:
         else :
             df[word] = 1
 
+documents = len(tfs)
+
+tfidfs = {}
+
+print("Computing TF-IDF...")
+
+for url in tfs:
+    terms = tfs[url]
+    tfidfs[url] = {}
+    for word in terms:
+        tfidfs[url][word] = terms[word] * log(documents / df[word])
+
 with mysql as db:
+    print("Emptying computed tables...")
     db.emptyTfDf()
+    print("Setting TFs...")
     db.setTf(tfs)
+    print("Setting DFs...")
     db.setDf(df)
+    print("Setting TF-IDFs...")
+    db.setTfIdf(tfidfs)

@@ -131,6 +131,7 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
             bestText = clean_html(htmlContent.text, stop_words, (lang == 'en'))
             db.content(wdfId, url, htmlContent.text, lang, title)
             db.setContentText(url, bestText, title, lang)
+            db.updateTfIdfOnline(url, bestText)
 
 
 def mysqlConnection() -> MySQL:

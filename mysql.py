@@ -28,6 +28,7 @@ emptyDfTableSQL = "TRUNCATE computed_df"
 emptyWatchTableSQL = "TRUNCATE computed_watch"
 
 tfSQL = 'INSERT IGNORE INTO `computed_tf` (url, word, tf) VALUES (%s, %s, %s)'
+tfIdfSQL = 'INSERT IGNORE INTO `computed_tfidf` (url, word, tfidf) VALUES (%s, %s, %s)'
 dfSQL = 'INSERT IGNORE INTO `computed_df` (word, df) VALUES (%s, %s)'
 
 # Interface SQL
@@ -192,6 +193,16 @@ class MySQL:
             db.executemany(tfSQL, list)
         self.db.commit()
 
+    def setTfIdf(self, tfidfs):
+        list = []
+        for url in tfidfs:
+            words = tfidfs[url]
+            for word in words:
+                list.append((url, word, words[word]))
+        with self.db.cursor() as db:
+            db.executemany(tfIdfSQL, list)
+        self.db.commit()
+
     def setDf(self, dfs):
         list = []
         for word in dfs:
@@ -246,6 +257,30 @@ class MySQL:
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(oldestEntrySQL, (wdfId))
             return db.fetchone()
+
+    def callUpdateDf(self, url, word):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute('CALL update_df(%s, %s)', (url, word))
+        self.db.commit()
+
+    def updateTfIdfOnline(self, url, bestText):
+        tf = {}
+        tokens = bestText.split()
+        for token in tokens:
+            if token in tf:
+                tf[token] += 1
+            else:
+                tf[token] = 1
+        tfs = {url: tf}
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            for word in tf:
+                db.callproc('update_df', (url, word))
+            self.setTf(tfs)
+            print('Starting TFIDF...')
+            for word in tf:
+                print(word)
+                db.callproc('update_tfidf', (url, word))
+            print('TFIDF done !')
 
     def __timeCondition(self, fromArg, toArg):
         result = ""
