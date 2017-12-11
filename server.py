@@ -3,33 +3,27 @@
 """
 This file is part of wdf-server.
 """
+import math
 import os
+import re
+from functools import wraps
 from threading import Thread
 
-from functools import wraps
-
-import math
-from langdetect import detect
-
 import lxml.html
-from lxml.html.clean import Cleaner
-
-from stop_words import get_stop_words
-
-from flask_compress import Compress
-
 import requests
 import secrets
-import re
 from flask import Flask, render_template, request, session, redirect, abort, current_app, Response, jsonify
+from flask_compress import Compress
 from flask_cors import CORS
-from requests_oauthlib import OAuth2Session
+from langdetect import detect
+from lxml.html.clean import Cleaner
 from oauthlib.oauth2 import MissingCodeError
+from requests_oauthlib import OAuth2Session
+from stop_words import get_stop_words
 
 from lda import LDAWDF
-from utils import clean_html
-
 from mysql import MySQL
+from utils import clean_html
 
 DEBUG = True
 
