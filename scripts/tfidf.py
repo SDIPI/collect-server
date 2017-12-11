@@ -148,3 +148,6 @@ with mysql as db:
     db.setDf(df)
     print("Setting TF-IDFs...")
     db.setTfIdf(tfidfs)
+    print("Keeping best 20 words for each url...")
+    db.computeBestWords()
+print("Done.")

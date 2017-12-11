@@ -150,18 +150,26 @@ def tfIdf(tf, df, documents):
 
 users = {}
 lda: LDAWDF = None
+bestWords: {} = None
 
 
 @app.before_first_request
 def first():
-    global users, lda
+    global users, lda, bestWords
     mysql = mysqlConnection()
     lda = LDAWDF(mysql)
+    users = {}
+    bestWords = {}
     with mysql as db:
         allUsers = db.getUsers()
-        users = {}
         for user in allUsers:
             users[user['wdfId']] = user
+        bestWordsList = db.getBestWords()
+    for entry in bestWordsList:
+        url = entry['url']
+        if url not in bestWords:
+            bestWords[url] = []
+        bestWords[url].append({'word': entry['word'], 'tfidf': entry['tfidf']})
     if lda.canLoad():
         print("Loading local LDA Model...")
         lda.load()
@@ -338,6 +346,8 @@ def mostVisitedSites(wdfId):
     mysql = mysqlConnection()
     with mysql as db:
         mostVisited = db.getMostVisitedSites(wdfId, fromArg, toArg)
+    for site in mostVisited:
+        site['words'] = bestWords[site['url']] if site['url'] in bestWords else []
     return jsonify(mostVisited)
 
 
@@ -353,18 +363,10 @@ def mostWatchedSites(wdfId):
         return jsonify({'error': "Incorrect parameter to"})
     mysql = mysqlConnection()
     with mysql as db:
-        mostVisited = db.getMostWatchedSites(wdfId, fromArg, toArg)
-    return jsonify(mostVisited)
-
-
-@app.route("/api/tfIdfSites", methods=['GET'])  # Call from interface
-@userConnected
-@apiMethod
-def tfIdfSites(wdfId):
-    mysql = mysqlConnection()
-    with mysql as db:
-        tfIdf = db.getTfIdfForUser(wdfId)
-    return jsonify(tfIdf)
+        mostWatched = db.getMostWatchedSites(wdfId, fromArg, toArg)[:200]
+    for site in mostWatched:
+        site['words'] = bestWords[site['url']] if site['url'] in bestWords else []
+    return jsonify(mostWatched)
 
 
 @app.route("/api/interests", methods=['GET'])  # Call from interface
@@ -372,16 +374,16 @@ def tfIdfSites(wdfId):
 @apiMethod
 def interests(wdfId):
     mysql = mysqlConnection()
-    with mysql as db:
-        tfIdfData = db.getTfIdfForUser(wdfId)
-        nb = db.getNbDocuments()['count']
+    with mysql as db: # db will be used to get only the URLs of the connected user
         w = {}
         wList = []
-        for word in tfIdfData:
-            if word['word']in w:
-                w[word['word']] += tfIdf(word['tf'], word['df'], nb)
-            else:
-                w[word['word']] = tfIdf(word['tf'], word['df'], nb)
+        for url in bestWords:
+            words = bestWords[url]
+            for word in words:
+                if word['word']in w:
+                    w[word['word']] += word['tfidf']
+                else:
+                    w[word['word']] = word['tfidf']
         for el in w:
             wList.append({'word': el, 'weight': w[el]})
 

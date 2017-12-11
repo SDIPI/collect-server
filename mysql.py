@@ -15,7 +15,6 @@ contentTextSQL = 'INSERT IGNORE INTO `content_text` (url, `content`, `title`, `l
 
 # Collect Server SQL
 getUsersSQL = 'SELECT * FROM `users`'
-getContentsSQL = 'SELECT * FROM `content`'
 getContentsTextSQL = 'SELECT * FROM `content_text`'
 getLastDayContentsSQL = 'SELECT `id`, `wdfId`, `url`, `timestamp` FROM `content` WHERE url LIKE CONCAT(\'%s\', \'%%\') AND timestamp >= DATE_ADD(NOW(), INTERVAL -1 DAY)'
 
@@ -25,19 +24,29 @@ newOrUpdateuserSQL = "INSERT INTO users (facebookId, facebookAccessToken, wdfTok
 # Compute SQL
 emptyTfTableSQL = "TRUNCATE computed_tf"
 emptyDfTableSQL = "TRUNCATE computed_df"
-emptyWatchTableSQL = "TRUNCATE computed_watch"
+emptyTfIdfTableSQL = "TRUNCATE computed_tfidf"
+emptyBestWordsTableSQL = "TRUNCATE computed_bestwords"
 
 tfSQL = 'INSERT IGNORE INTO `computed_tf` (url, word, tf) VALUES (%s, %s, %s)'
 tfIdfSQL = 'INSERT IGNORE INTO `computed_tfidf` (url, word, tfidf) VALUES (%s, %s, %s)'
 dfSQL = 'INSERT IGNORE INTO `computed_df` (word, df) VALUES (%s, %s)'
 
+computeBestWordsSQL = '''SET @currcount = NULL, @currvalue = NULL;
+INSERT INTO computed_bestwords
+    SELECT url, word, tfidf FROM (
+        SELECT
+    url, word, tfidf,
+    @currcount := IF(@currvalue = url, @currcount + 1, 1) AS rank,
+    @currvalue := url AS whatever
+    FROM computed_tfidf
+    ORDER BY url, tfidf DESC
+    ) AS whatever WHERE rank <= 20'''
+
 # Interface SQL
-mostVisitedSitesSQL = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s GROUP BY `url`'
-mostWatchedSitesSQL = 'SELECT `wdfId`, `url`, CAST(SUM(`amount`) AS UNSIGNED) AS time FROM `pagewatch` WHERE wdfId=%s GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC'
 mostVisitedSitesTemplateSQL1 = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s'
-mostVisitedSitesTemplateSQL2 = ' GROUP BY `url`'
+mostVisitedSitesTemplateSQL2 = ' GROUP BY `url` LIMIT 200'
 mostWatchedSitesTemplateSQL1 = 'SELECT `wdfId`, `url`, CAST(SUM(`amount`) AS UNSIGNED) AS time FROM `pagewatch` WHERE wdfId=%s'
-mostWatchedSitesTemplateSQL2 = ' GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC'
+mostWatchedSitesTemplateSQL2 = ' GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC LIMIT 200'
 
 oldestEntrySQL = 'SELECT DATE(`timestamp`) AS date FROM `pageviews` WHERE `wdfId`=%s ORDER BY `timestamp` ASC LIMIT 1'
 
@@ -64,37 +73,14 @@ ORDER BY DATE(timestamp) ASC, SUM(`amount`) DESC"""
 
 nbDocumentsSQL = "SELECT COUNT(*) AS `count` FROM (SELECT DISTINCT url FROM `computed_tf`) AS `cnt`"
 
-tfIdfForUrlSQL = """SELECT
-`computed_tf`.`url` AS `url`,
-`computed_tf`.`word` AS `word`,
-`computed_tf`.`tf` AS `tf`,
-`computed_df`.`df` AS `df`,
-`computed_tf`.`tf` * LOG((SELECT COUNT(*) FROM `computed_df`) / `computed_df`.`df`) AS `tfidf`
-FROM
-`computed_tf`
-LEFT JOIN
-`computed_df`
-ON
-`computed_tf`.`word` = `computed_df`.`word`
+tfIDfForUserSQL = """
+SELECT *
+FROM `computed_tfidf`
 WHERE
-`computed_tf`.`url` = '%s'
-ORDER BY `computed_tf`.`tf` DESC"""
+`computed_tfidf`.`url` IN (SELECT DISTINCT url FROM `pageviews` WHERE `wdfId`=%s)
+ORDER BY `url` DESC, `tfidf` DESC"""
 
-tfDfForUserSQL = """
-SELECT
-`computed_tf`.`url` AS `url`,
-`computed_tf`.`word` AS `word`,
-`computed_tf`.`tf` AS `tf`,
-`computed_df`.`df` AS `df`
-FROM
-`computed_tf`
-LEFT JOIN
-`computed_df`
-ON
-`computed_tf`.`word` = `computed_df`.`word`
-WHERE
-`computed_tf`.`url` IN (SELECT DISTINCT url FROM `pageviews` WHERE `wdfId`=%s)
-ORDER BY `url` DESC, `tf` DESC"""
+bestWordsSQL = """SELECT * FROM `computed_bestwords`"""
 
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
@@ -162,11 +148,6 @@ class MySQL:
             db.execute(getUsersSQL)
             return db.fetchall()
 
-    def getContents(self):
-        with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(getContentsSQL)
-            return db.fetchall()
-
     def getContentsText(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getContentsTextSQL)
@@ -181,6 +162,8 @@ class MySQL:
         with self.db.cursor() as db:
             db.execute(emptyTfTableSQL)
             db.execute(emptyDfTableSQL)
+            db.execute(emptyTfIdfTableSQL)
+            db.execute(emptyBestWordsTableSQL)
         self.db.commit()
 
     def setTf(self, tfs):
@@ -231,14 +214,9 @@ class MySQL:
             db.execute(query, (wdfId))
             return db.fetchall()
 
-    def getTfIdfForUrl(self, url):
+    def getBestWords(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(tfIdfForUrlSQL, (url))
-            return db.fetchall()
-
-    def getTfIdfForUser(self, wdfId):
-        with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(tfDfForUserSQL, (wdfId))
+            db.execute(bestWordsSQL)
             return db.fetchall()
 
     def getNbDocuments(self):
@@ -263,24 +241,10 @@ class MySQL:
             db.execute('CALL update_df(%s, %s)', (url, word))
         self.db.commit()
 
-    def updateTfIdfOnline(self, url, bestText):
-        tf = {}
-        tokens = bestText.split()
-        for token in tokens:
-            if token in tf:
-                tf[token] += 1
-            else:
-                tf[token] = 1
-        tfs = {url: tf}
-        with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            for word in tf:
-                db.callproc('update_df', (url, word))
-            self.setTf(tfs)
-            print('Starting TFIDF...')
-            for word in tf:
-                print(word)
-                db.callproc('update_tfidf', (url, word))
-            print('TFIDF done !')
+    def computeBestWords(self):
+        with self.db.cursor() as db:
+            db.execute(computeBestWordsSQL)
+        self.db.commit()
 
     def __timeCondition(self, fromArg, toArg):
         result = ""

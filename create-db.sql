@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Client :  localhost:3306
--- Généré le :  Mer 06 Décembre 2017 à 13:12
+-- Généré le :  Lun 11 Décembre 2017 à 15:20
 -- Version du serveur :  5.7.20-0ubuntu0.17.04.1
 -- Version de PHP :  7.0.22-0ubuntu0.17.04.1
 
@@ -19,8 +19,18 @@ SET time_zone = "+00:00";
 --
 -- Base de données :  `wdf`
 --
-CREATE DATABASE IF NOT EXISTS `wdf` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
-USE `wdf`;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `computed_bestwords`
+--
+
+CREATE TABLE `computed_bestwords` (
+  `url` varchar(1024) NOT NULL,
+  `word` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tfidf` float NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -48,13 +58,13 @@ CREATE TABLE `computed_tf` (
 -- --------------------------------------------------------
 
 --
--- Structure de la table `computed_watch`
+-- Structure de la table `computed_tfidf`
 --
 
-CREATE TABLE `computed_watch` (
-  `wdfId` varchar(64) NOT NULL,
+CREATE TABLE `computed_tfidf` (
   `url` varchar(1024) NOT NULL,
-  `time` int(11) NOT NULL
+  `word` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tfidf` float NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -172,10 +182,10 @@ ALTER TABLE `computed_tf`
   ADD PRIMARY KEY (`url`,`word`);
 
 --
--- Index pour la table `computed_watch`
+-- Index pour la table `computed_tfidf`
 --
-ALTER TABLE `computed_watch`
-  ADD PRIMARY KEY (`wdfId`,`url`);
+ALTER TABLE `computed_tfidf`
+  ADD PRIMARY KEY (`url`,`word`);
 
 --
 -- Index pour la table `content`
@@ -230,22 +240,22 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT pour la table `content`
 --
 ALTER TABLE `content`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=849;
 --
 -- AUTO_INCREMENT pour la table `event`
 --
 ALTER TABLE `event`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=740;
 --
 -- AUTO_INCREMENT pour la table `pagerequests`
 --
 ALTER TABLE `pagerequests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1449;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=164263;
 --
 -- AUTO_INCREMENT pour la table `pagewatch`
 --
 ALTER TABLE `pagewatch`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5997;
 --
 -- AUTO_INCREMENT pour la table `users`
 --
