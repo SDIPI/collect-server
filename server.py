@@ -399,9 +399,15 @@ def interests(wdfId):
 @userConnected
 @apiMethod
 def historySites(wdfId):
+    fromArg = request.args.get('from')
+    toArg = request.args.get('to')
+    if fromArg and not datePattern.match(fromArg):
+        return jsonify({'error': "Incorrect parameter from"})
+    if toArg and not datePattern.match(toArg):
+        return jsonify({'error': "Incorrect parameter to"})
     mysql = mysqlConnection()
     with mysql as db:
-        history = db.getHistorySites(wdfId)
+        history = db.getHistorySites(wdfId, fromArg, toArg)
     return jsonify(history)
 
 

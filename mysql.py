@@ -50,6 +50,17 @@ WHERE `wdfId` = %s
 GROUP BY `url`, DATE(timestamp)
 ORDER BY DATE(timestamp) ASC, SUM(`amount`) DESC"""
 
+historySitesTemplateSQL1 = """
+SELECT
+`wdfId`,
+`url`, DATE(timestamp) AS day,
+CAST(SUM(`amount`) as UNSIGNED) AS sumAmount
+FROM `pagewatch`
+WHERE `wdfId` = %s"""
+historySitesTemplateSQL2 = """
+GROUP BY `url`, DATE(timestamp)
+ORDER BY DATE(timestamp) ASC, SUM(`amount`) DESC"""
+
 nbDocumentsSQL = "SELECT COUNT(*) AS `count` FROM (SELECT DISTINCT url FROM `computed_tf`) AS `cnt`"
 
 tfIdfForUrlSQL = """SELECT
@@ -224,9 +235,11 @@ class MySQL:
             db.execute(nbDocumentsSQL)
             return db.fetchone()
 
-    def getHistorySites(self, wdfId):
+    def getHistorySites(self, wdfId, fromArg, toArg):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(historySitesSQL, (wdfId))
+            timeConditions = self.__timeCondition(fromArg, toArg)
+            query = historySitesTemplateSQL1 + timeConditions + historySitesTemplateSQL2
+            db.execute(query, (wdfId))
             return db.fetchall()
 
     def getOldestEntry(self, wdfId):
