@@ -48,7 +48,6 @@ def token_updater(token):
     session['oauth2_token'] = token
 
 
-import re
 datePattern = re.compile("^\d{1,4}-\d{1,2}-\d{1,2}$")
 
 
@@ -131,7 +130,6 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
             bestText = clean_html(htmlContent.text, stop_words, (lang == 'en'))
             db.content(wdfId, url, htmlContent.text, lang, title)
             db.setContentText(url, bestText, title, lang)
-            db.updateTfIdfOnline(url, bestText)
 
 
 def mysqlConnection() -> MySQL:
