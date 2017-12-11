@@ -16,6 +16,8 @@ from lxml.html.clean import Cleaner
 
 from stop_words import get_stop_words
 
+from flask_compress import Compress
+
 import requests
 import secrets
 import re
@@ -89,6 +91,7 @@ def facebook_session(token=None, state=None):
 
 
 app = Flask(__name__)
+Compress(app)
 CORS(app)
 app.debug = True
 app.config['SECRET_KEY'] = OAUTH2_CLIENT_SECRET
