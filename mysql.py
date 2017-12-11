@@ -251,5 +251,5 @@ class MySQL:
         if fromArg is not None:
             result += " AND `timestamp` >= '" + fromArg + " 00:00:00' "
         if toArg is not None:
-            result += " AND `timestamp` <= '" + toArg + " 00:00:00' "
+            result += " AND `timestamp` <= '" + toArg + " 23:59:59' "
         return result
