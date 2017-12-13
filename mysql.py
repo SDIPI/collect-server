@@ -67,6 +67,7 @@ SELECT
 CAST(SUM(`amount`) as UNSIGNED) AS sumAmount
 FROM `pagewatch`
 WHERE `wdfId` = %s"""
+
 historySitesTemplateSQL2 = """
 GROUP BY `url`, DATE(timestamp)
 ORDER BY DATE(timestamp) ASC, SUM(`amount`) DESC"""
