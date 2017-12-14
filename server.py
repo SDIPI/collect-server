@@ -448,8 +448,19 @@ def setInterests(wdfId):
         result.append((wdfId, interest))
     mysql = mysqlConnection()
     with mysql as db:
-        oldest = db.setUserInterests(result)
-    return jsonify(oldest)
+        clean = db.cleanUserInterests(wdfId)
+        interests = db.setUserInterests(result)
+    return jsonify(interests)
+
+
+@app.route("/api/getInterests", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getInterests(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        userInterests = db.getUserInterests(wdfId)
+    return jsonify(userInterests)
 
 
 @app.errorhandler(401)

@@ -87,7 +87,9 @@ bestWordsSQL = """SELECT * FROM `computed_bestwords`"""
 
 interestsListSQL = """SELECT * FROM `interests`"""
 
-addUserInterest = """INSERT IGNORE INTO `user_interests` (user_id, interest_id) VALUES (%s, %s)"""
+cleanUserInterestsSQL = """DELETE FROM `user_interests` where user_id = %s"""
+addUserInterestSQL = """INSERT IGNORE INTO `user_interests` (user_id, interest_id) VALUES (%s, %s)"""
+getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE user_id = %s"""
 
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
@@ -248,10 +250,20 @@ class MySQL:
             db.execute(interestsListSQL)
             return db.fetchall()
 
+    def cleanUserInterests(self, wdfId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(cleanUserInterestsSQL, (wdfId))
+        self.db.commit()
+
     def setUserInterests(self, interests: List[Tuple[int, int]]):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.executemany(addUserInterest, interests)
+            db.executemany(addUserInterestSQL, interests)
         self.db.commit()
+
+    def getUserInterests(self, wdfId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(getUserInterestsSQL % (wdfId))
+            return db.fetchall()
 
     def callUpdateDf(self, url, word):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
