@@ -428,6 +428,30 @@ def nbDocuments():
     return jsonify(nb)
 
 
+@app.route("/api/interestsList", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def interestsList(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        oldest = db.getInterestsList()
+    return jsonify(oldest)
+
+
+@app.route("/api/setInterests", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def setInterests(wdfId):
+    interests = request.args.get('data').split(',')
+    result = []
+    for interest in interests:
+        result.append((wdfId, interest))
+    mysql = mysqlConnection()
+    with mysql as db:
+        oldest = db.setUserInterests(result)
+    return jsonify(oldest)
+
+
 @app.errorhandler(401)
 def unauthorized(e):
     return render_template("layout.html", content="Error 401", warningMessage=e.description), 401

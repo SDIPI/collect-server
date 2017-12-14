@@ -3,6 +3,8 @@
 """
 This file is part of wdf-server.
 """
+from typing import List, Tuple
+
 import pymysql as pymysql
 
 # Collect SQL
@@ -82,6 +84,10 @@ WHERE
 ORDER BY `url` DESC, `tfidf` DESC"""
 
 bestWordsSQL = """SELECT * FROM `computed_bestwords`"""
+
+interestsListSQL = """SELECT * FROM `interests`"""
+
+addUserInterest = """INSERT IGNORE INTO `user_interests` (user_id, interest_id) VALUES (%s, %s)"""
 
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
@@ -236,6 +242,16 @@ class MySQL:
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(oldestEntrySQL, (wdfId))
             return db.fetchone()
+
+    def getInterestsList(self):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(interestsListSQL)
+            return db.fetchall()
+
+    def setUserInterests(self, interests: List[Tuple[int, int]]):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.executemany(addUserInterest, interests)
+        self.db.commit()
 
     def callUpdateDf(self, url, word):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:

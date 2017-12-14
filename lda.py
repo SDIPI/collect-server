@@ -35,6 +35,7 @@ class LDAWDF:
         doc_term_matrix = [self.dictionary.doc2bow(doc) for doc in documents]
 
         # Running and Trainign LDA model on the document term matrix.
+        print("Starting to train LDA Model...")
         self.ldamodel = gensim.models.ldamodel.LdaModel(doc_term_matrix, num_topics=5, id2word=self.dictionary, passes=50)
 
     def printTest(self):
