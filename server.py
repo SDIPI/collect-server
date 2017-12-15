@@ -463,6 +463,16 @@ def getInterests(wdfId):
     return jsonify(userInterests)
 
 
+@app.route("/api/getUrlsTopic", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getUrlsTopic(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        userInterests = db.getUrlsTopic()
+    return jsonify(userInterests)
+
+
 @app.errorhandler(401)
 def unauthorized(e):
     return render_template("layout.html", content="Error 401", warningMessage=e.description), 401

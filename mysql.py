@@ -92,6 +92,7 @@ addUserInterestSQL = """INSERT IGNORE INTO `user_interests` (user_id, interest_i
 getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE user_id = %s"""
 
 setUrlTopicSQL = """INSERT INTO `url_topics` (url, topic) VALUES (%s, %s)"""
+getUrlsTopicSQL = """SELECT * FROM `url_topics`"""
 
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
@@ -251,6 +252,11 @@ class MySQL:
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(oldestEntrySQL, (wdfId))
             return db.fetchone()
+
+    def getUrlsTopic(self):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(getUrlsTopicSQL)
+            return db.fetchall()
 
     def getInterestsList(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
