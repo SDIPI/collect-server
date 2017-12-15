@@ -57,8 +57,30 @@ class LDAWDF:
         self.ldamodel = LdaModel.load(self.saveFile)
         self.dictionary = gensim.corpora.Dictionary.load(self.saveFileDict)
 
-    def get_document_topics(self, document):
-        return self.ldamodel.get_document_topics(document)
+    def fillDb(self):
+        topics = {}
+        result = []
+        for topicId in range(0, 5):
+            topicTerms = self.ldamodel.get_topic_terms(topicId, 3)
+            topicTerms.sort(key=lambda x: x[1], reverse=True)
+            words = []
+            for topicTerm in topicTerms:
+                words.append(self.dictionary.get(topicTerm[0]))
+            topics[topicId] = ' '.join(words)
+        with mysql as db:
+            contentsText = db.getContentsText()
+            for element in contentsText:
+                bow = self.dictionary.doc2bow(element['content'].split())
+                docTopics = self.ldamodel.get_document_topics(bow)
+                bestP = 0
+                best = docTopics[0][0]
+                for docTopic in docTopics:
+                    if docTopic[1] > bestP:
+                        best = docTopic[0]
+                        bestP = docTopic[1]
+                result.append((element['url'], topics[best]))
+            db.setUrlsTopic(result)
+
 
     def get_terms_topics(self, keywords):
         bow = self.dictionary.doc2bow(keywords[:30])
@@ -84,6 +106,7 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--user", help="Database user name")
     parser.add_argument("-w", "--password", help="Database's user password")
     parser.add_argument("-d", "--name", help="Database's name")
+    parser.add_argument("-t", "--topics", help="Fills the topic for each document in the DB", action="store_true")
 
     args = parser.parse_args()
 
@@ -126,5 +149,10 @@ if __name__ == '__main__':
         wdf.load()
     else:
         wdf.trainFromStart()
+
+    # Fill the DB if asked
+    if args.topics:
+        wdf.fillDb()
+
     wdf.save()
     wdf.printTest()

@@ -91,6 +91,8 @@ cleanUserInterestsSQL = """DELETE FROM `user_interests` where user_id = %s"""
 addUserInterestSQL = """INSERT IGNORE INTO `user_interests` (user_id, interest_id) VALUES (%s, %s)"""
 getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE user_id = %s"""
 
+setUrlTopicSQL = """INSERT INTO `url_topics` (url, topic) VALUES (%s, %s)"""
+
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
         self.host = host
@@ -173,6 +175,11 @@ class MySQL:
             db.execute(emptyDfTableSQL)
             db.execute(emptyTfIdfTableSQL)
             db.execute(emptyBestWordsTableSQL)
+        self.db.commit()
+
+    def setUrlsTopic(self, urlsTopic):
+        with self.db.cursor() as db:
+            db.executemany(setUrlTopicSQL, urlsTopic)
         self.db.commit()
 
     def setTf(self, tfs):
