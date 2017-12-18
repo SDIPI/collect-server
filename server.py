@@ -5,6 +5,7 @@ This file is part of wdf-server.
 """
 import math
 import os
+import subprocess
 import re
 from functools import wraps
 from threading import Thread
@@ -17,6 +18,7 @@ from flask_compress import Compress
 from flask_cors import CORS
 from langdetect import detect
 from lxml.html.clean import Cleaner
+from lxml import etree
 from oauthlib.oauth2 import MissingCodeError
 from requests_oauthlib import OAuth2Session
 from stop_words import get_stop_words
@@ -98,6 +100,7 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
     if lastDay:
         return
     if ("http://" in url or "https://" in url) and (url[:17] != "http://localhost:" and url[:17] != "http://localhost/"):
+
         # Detect if content is even HTML
         customHeaders = {
             'User-Agent': 'server:ch.sdipi.wdf:v3.1.0 (by /u/protectator)',
@@ -106,27 +109,35 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
         if 'html' not in contentHead.headers['content-type']:
             return
 
-        htmlContent = requests.get(url, headers=customHeaders)
-        with connection as db:
-            htmlParsed = lxml.html.fromstring(htmlContent.text)
-            try:
-                title = htmlParsed.find(".//title").text
-            except:
-                title = ""
+        chrome_process = subprocess.run(["node", "./js/index.js", url], stdout=subprocess.PIPE)
 
-            cleaner = Cleaner()
-            cleaner.javascript = True
-            cleaner.style = True
-            textClean = cleaner.clean_html(htmlParsed).text_content()
+        if chrome_process.returncode == 0:
+            htmlContentRaw = chrome_process.stdout.decode('utf8')
 
-            lang = detect(textClean)
-            try:
-                stop_words = get_stop_words(lang)
-            except:
-                stop_words = []
-            bestText = clean_html(htmlContent.text, stop_words, (lang == 'en'))
-            db.content(wdfId, url, htmlContent.text, lang, title)
-            db.setContentText(url, bestText, title, lang)
+            htmlContent = re.sub("<", " <", htmlContentRaw)
+            with connection as db:
+
+                htmlParsed = lxml.html.fromstring(htmlContent)
+                try:
+                    title = htmlParsed.find(".//title").text
+                except:
+                    title = ""
+
+                cleaner = Cleaner()
+                cleaner.javascript = True
+                cleaner.style = True
+                textClean = cleaner.clean_html(htmlParsed).text_content()
+
+                lang = detect(textClean)
+                try:
+                    stop_words = get_stop_words(lang)
+                except:
+                    stop_words = []
+                bestText = clean_html(htmlContent, stop_words, (lang == 'en'))
+                db.content(wdfId, url, htmlContent, lang, title)
+                db.setContentText(url, bestText, title, lang)
+        else:
+            print(chrome_process.stdout)
 
 
 def mysqlConnection() -> MySQL:

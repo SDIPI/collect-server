@@ -11,11 +11,8 @@ def clean_punctuation(text: string):
 
 
 def clean_html(html_string: string, stopwords, lemmatize: bool):
-    # Add spaces before closing tags
-    html_spaced = re.sub("<", " <", html_string)
-
     # Parse the HTML
-    html_content = lxml.html.fromstring(html_spaced)
+    html_content = lxml.html.fromstring(html_string)
 
     # Remove HTML tags to only keep text
     cleaner = Cleaner()
