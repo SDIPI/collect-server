@@ -149,10 +149,10 @@ if __name__ == '__main__':
         wdf.load()
     else:
         wdf.trainFromStart()
+        wdf.save()
 
     # Fill the DB if asked
     if args.topics:
         wdf.fillDb()
 
-    wdf.save()
     wdf.printTest()

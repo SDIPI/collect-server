@@ -7,6 +7,7 @@ import math
 import os
 import subprocess
 import re
+import json
 from functools import wraps
 from threading import Thread
 
@@ -50,7 +51,7 @@ datePattern = re.compile("^\d{1,4}-\d{1,2}-\d{1,2}$")
 
 filteredSitesParser = ConfigParser()
 filteredSitesParser.read('ignorelist.ini')
-patterns = filteredSitesParser.get('ignore_regex', 'patterns')
+patterns = json.loads(filteredSitesParser.get('ignore_regex', 'patterns'))
 
 
 def apiMethod(method):
@@ -61,6 +62,7 @@ def apiMethod(method):
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
+
     return withCORS
 
 
@@ -72,6 +74,7 @@ def userConnected(method):
         if wdfId is None:
             return jsonify({'error': "Not connected"})
         return method(wdfId, *args, **kwds)
+
     return with_userConnected
 
 
@@ -103,7 +106,8 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
         lastDay = db.getLastDayContents(url)
     if lastDay:
         return
-    if ("http://" in url or "https://" in url) and (url[:17] != "http://localhost:" and url[:17] != "http://localhost/"):
+    if ("http://" in url or "https://" in url) and (
+            url[:17] != "http://localhost:" and url[:17] != "http://localhost/"):
 
         # Detect if content is even HTML
         customHeaders = {
@@ -340,10 +344,13 @@ def collectWatch():
         return request.values['error']
 
     data = request.get_json()
+    filtered = {}
 
-    if isFilteredSite(data['url']):
-        resp = jsonify({'success': "Ignored URL"})
-        return resp
+    for site in data['value']:
+        if not isFilteredSite(site):
+            filtered[site] = data['value'][site]
+
+    data['value'] = filtered
 
     mysql = mysqlConnection()
     wdfId = idOfToken(data['accessToken'])
@@ -356,6 +363,7 @@ def collectWatch():
     resp = Response('{"result":"ok"}')
 
     return resp
+
 
 #
 # /api/
@@ -409,13 +417,13 @@ def mostWatchedSites(wdfId):
 @apiMethod
 def interests(wdfId):
     mysql = mysqlConnection()
-    with mysql as db: # db will be used to get only the URLs of the connected user
+    with mysql as db:  # db will be used to get only the URLs of the connected user
         w = {}
         wList = []
         for url in bestWords:
             words = bestWords[url]
             for word in words:
-                if word['word']in w:
+                if word['word'] in w:
                     w[word['word']] += word['tfidf']
                 else:
                     w[word['word']] = word['tfidf']
