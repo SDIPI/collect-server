@@ -36,10 +36,10 @@ class LDAWDF:
 
         # Running and Trainign LDA model on the document term matrix.
         print("Starting to train LDA Model...")
-        self.ldamodel = gensim.models.ldamodel.LdaModel(doc_term_matrix, num_topics=5, id2word=self.dictionary, passes=50)
+        self.ldamodel = gensim.models.ldamodel.LdaModel(doc_term_matrix, num_topics=10, id2word=self.dictionary, passes=50)
 
     def printTest(self):
-        print(self.ldamodel.print_topics(num_topics=10, num_words=8))
+        print(self.ldamodel.print_topics(num_topics=10, num_words=5))
 
     def save(self):
         self.ldamodel.save(self.saveFile)

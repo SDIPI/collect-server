@@ -14,11 +14,11 @@ import lxml.html
 import requests
 import secrets
 from flask import Flask, render_template, request, session, redirect, abort, current_app, Response, jsonify
+from configparser import ConfigParser, NoOptionError
 from flask_compress import Compress
 from flask_cors import CORS
 from langdetect import detect
 from lxml.html.clean import Cleaner
-from lxml import etree
 from oauthlib.oauth2 import MissingCodeError
 from requests_oauthlib import OAuth2Session
 from stop_words import get_stop_words
@@ -47,6 +47,10 @@ def token_updater(token):
 
 
 datePattern = re.compile("^\d{1,4}-\d{1,2}-\d{1,2}$")
+
+filteredSitesParser = ConfigParser()
+filteredSitesParser.read('ignorelist.ini')
+patterns = filteredSitesParser.get('ignore_regex', 'patterns')
 
 
 def apiMethod(method):
@@ -257,6 +261,11 @@ def collect():
         return request.values['error']
 
     data = request.get_json()
+
+    if isFilteredSite(data['url']):
+        resp = jsonify({'success': "Ignored URL"})
+        return resp
+
     mysql = mysqlConnection()
     wdfId = idOfToken(data['accessToken'])
     if wdfId is None:
@@ -281,6 +290,11 @@ def collectRequest():
         return request.values['error']
 
     data = request.get_json()
+
+    if isFilteredSite(data['url']):
+        resp = jsonify({'success': "Ignored URL"})
+        return resp
+
     mysql = mysqlConnection()
     wdfId = idOfToken(data['accessToken'])
     if wdfId is None:
@@ -301,6 +315,11 @@ def collectEvent():
         return request.values['error']
 
     data = request.get_json()
+
+    if isFilteredSite(data['url']):
+        resp = jsonify({'success': "Ignored URL"})
+        return resp
+
     mysql = mysqlConnection()
     wdfId = idOfToken(data['accessToken'])
     if wdfId is None:
@@ -321,6 +340,11 @@ def collectWatch():
         return request.values['error']
 
     data = request.get_json()
+
+    if isFilteredSite(data['url']):
+        resp = jsonify({'success': "Ignored URL"})
+        return resp
+
     mysql = mysqlConnection()
     wdfId = idOfToken(data['accessToken'])
     if wdfId is None:
@@ -523,6 +547,14 @@ def utility_processor():
 def check_auth(user):
     if user is None:
         abort(401, "Missing user")
+
+
+def isFilteredSite(url):
+    for pattern in patterns:
+        m = re.match(pattern, url)
+        if m:
+            return True
+    return False
 
 
 def run(ip, port, db_host, db_user, db_pass, db_name):
