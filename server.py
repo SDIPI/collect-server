@@ -365,6 +365,66 @@ def collectWatch():
     return resp
 
 
+@app.route("/collectActions", methods=['POST'])  # Call from extension
+@apiMethod
+def collectActions():
+    if request.values.get('error'):
+        return request.values['error']
+
+    data = request.get_json()
+
+    wdfId = idOfToken(data['accessToken'])
+    if wdfId is None:
+        resp = jsonify({'error': "Not connected"})
+        return resp
+
+    for action in data['value']:
+        actionData = action['data']
+        actionType = action['type']
+        if actionType == 'request':
+            treatRequest(wdfId, actionData)
+        elif actionType == 'watch':
+            treatWatch(wdfId, actionData)
+        elif actionType == 'view':
+            treatView(wdfId, actionData)
+        elif actionType == 'event':
+            treatEvent(wdfId, actionData)
+
+    resp = Response('{"result":"ok"}')
+
+    return resp
+
+def treatRequest(wdfId, data):
+    if isFilteredSite(data['url']):
+        return
+    mysql = mysqlConnection()
+    with mysql as db:
+        db.pageRequest(wdfId, data['url'], data['request'], data['method'])
+
+def treatWatch(wdfId, data):
+    # Removing filtered sites
+    filtered = {}
+    for site in data:
+        if not isFilteredSite(site):
+            filtered[site] = data[site]
+
+    mysql = mysqlConnection()
+    with mysql as db:
+        db.watchEvents(wdfId, filtered)
+
+def treatView(wdfId, data):
+    if isFilteredSite(data['url']):
+        return
+    mysql = mysqlConnection()
+    with mysql as db:
+        db.pageView(wdfId, data['url'])
+
+def treatEvent(wdfId, data):
+    if isFilteredSite(data['url']):
+        return
+    mysql = mysqlConnection()
+    with mysql as db:
+        db.pageEvent(wdfId, data['url'], data['type'], data['value'])
 #
 # /api/
 #
