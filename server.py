@@ -418,6 +418,8 @@ def treatView(wdfId, data):
     mysql = mysqlConnection()
     with mysql as db:
         db.pageView(wdfId, data['url'])
+    thread = Thread(target=getHTML, args=(data['url'], wdfId, mysql))
+    thread.start()
 
 def treatEvent(wdfId, data):
     if isFilteredSite(data['url']):
