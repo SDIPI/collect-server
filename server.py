@@ -258,113 +258,6 @@ def authsuccess():
     return render_template("layout.html", contentTemplate="loginsuccess.html", userName='user', userId='id')
 
 
-@app.route("/collect", methods=['POST'])  # Call from script
-@apiMethod
-def collect():
-    if request.values.get('error'):
-        return request.values['error']
-
-    data = request.get_json()
-
-    if isFilteredSite(data['url']):
-        resp = jsonify({'success': "Ignored URL"})
-        return resp
-
-    mysql = mysqlConnection()
-    wdfId = idOfToken(data['accessToken'])
-    if wdfId is None:
-        resp = jsonify({'error': "Not connected"})
-        return resp
-    with mysql as db:
-        db.pageView(wdfId, data['url'])
-
-    # Thread
-    thread = Thread(target=getHTML, args=(data['url'], wdfId, mysql))
-    thread.start()
-
-    resp = Response('{"result":"ok"}')
-
-    return resp
-
-
-@app.route("/collectRequest", methods=['POST'])  # Call from script
-@apiMethod
-def collectRequest():
-    if request.values.get('error'):
-        return request.values['error']
-
-    data = request.get_json()
-
-    if isFilteredSite(data['url']):
-        resp = jsonify({'success': "Ignored URL"})
-        return resp
-
-    mysql = mysqlConnection()
-    wdfId = idOfToken(data['accessToken'])
-    if wdfId is None:
-        resp = jsonify({'error': "Not connected"})
-        return resp
-    with mysql as db:
-        db.pageRequest(wdfId, data['url'], data['request'], data['method'])
-
-    resp = Response('{"result":"ok"}')
-
-    return resp
-
-
-@app.route("/collectEvent", methods=['POST'])  # Call from script
-@apiMethod
-def collectEvent():
-    if request.values.get('error'):
-        return request.values['error']
-
-    data = request.get_json()
-
-    if isFilteredSite(data['url']):
-        resp = jsonify({'success': "Ignored URL"})
-        return resp
-
-    mysql = mysqlConnection()
-    wdfId = idOfToken(data['accessToken'])
-    if wdfId is None:
-        resp = jsonify({'error': "Not connected"})
-        return resp
-    with mysql as db:
-        db.pageEvent(wdfId, data['url'], data['type'], data['value'])
-
-    resp = Response('{"result":"ok"}')
-
-    return resp
-
-
-@app.route("/collectWatch", methods=['POST'])  # Call from script
-@apiMethod
-def collectWatch():
-    if request.values.get('error'):
-        return request.values['error']
-
-    data = request.get_json()
-    filtered = {}
-
-    for site in data['value']:
-        if not isFilteredSite(site):
-            filtered[site] = data['value'][site]
-
-    data['value'] = filtered
-
-    mysql = mysqlConnection()
-    wdfId = idOfToken(data['accessToken'])
-    if wdfId is None:
-        resp = jsonify({'error': "Not connected"})
-        return resp
-    with mysql as db:
-        db.watchEvents(wdfId, data['value'])
-
-    resp = Response('{"result":"ok"}')
-
-    return resp
-
-
 @app.route("/collectActions", methods=['POST'])  # Call from extension
 @apiMethod
 def collectActions():
@@ -372,7 +265,6 @@ def collectActions():
         return request.values['error']
 
     data = request.get_json()
-
     wdfId = idOfToken(data['accessToken'])
     if wdfId is None:
         resp = jsonify({'error': "Not connected"})
@@ -427,6 +319,7 @@ def treatEvent(wdfId, data):
     mysql = mysqlConnection()
     with mysql as db:
         db.pageEvent(wdfId, data['url'], data['type'], data['value'])
+
 #
 # /api/
 #
@@ -553,7 +446,7 @@ def setInterests(wdfId):
         result.append((wdfId, interest))
     mysql = mysqlConnection()
     with mysql as db:
-        clean = db.cleanUserInterests(wdfId)
+        db.cleanUserInterests(wdfId)
         interests = db.setUserInterests(result)
     return jsonify(interests)
 
@@ -566,6 +459,21 @@ def getInterests(wdfId):
     with mysql as db:
         userInterests = db.getUserInterests(wdfId)
     return jsonify(userInterests)
+
+
+@app.route("/api/setTag", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def setTag(wdfId):
+    interests = request.args.get('data').split(',')
+    result = []
+    for interest in interests:
+        result.append((wdfId, interest))
+    mysql = mysqlConnection()
+    with mysql as db:
+        db.cleanUserInterests(wdfId)
+        interests = db.setUserInterests(result)
+    return jsonify(interests)
 
 
 @app.route("/api/getUrlsTopic", methods=['GET'])  # Call from interface
