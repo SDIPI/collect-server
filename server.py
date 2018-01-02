@@ -113,9 +113,15 @@ def getHTML(url: str, wdfId: str, connection: MySQL):
         customHeaders = {
             'User-Agent': 'server:ch.sdipi.wdf:v3.1.0 (by /u/protectator)',
         }
-        contentHead = requests.head(url, headers=customHeaders)
-        if 'html' not in contentHead.headers['content-type']:
+        try:
+            contentHead = requests.head(url, headers=customHeaders)
+        except requests.exceptions.SSLError as e:
+            print("SSL Exception while getHTML of " + url)
+            print(e)
             return
+        if 'content-type' in contentHead.headers:
+            if 'html' not in contentHead.headers['content-type']:
+                return
 
         chrome_process = subprocess.run(["node", "./js/index.js", url], stdout=subprocess.PIPE)
 
@@ -311,6 +317,7 @@ def treatView(wdfId, data):
     with mysql as db:
         db.pageView(wdfId, data['url'])
     thread = Thread(target=getHTML, args=(data['url'], wdfId, mysql))
+    thread.name = "Thread_getHTML_" + data['url']
     thread.start()
 
 def treatEvent(wdfId, data):
@@ -367,10 +374,10 @@ def mostWatchedSites(wdfId):
     return jsonify(mostWatched)
 
 
-@app.route("/api/interests", methods=['GET'])  # Call from interface
+@app.route("/api/topics", methods=['GET'])  # Call from interface
 @userConnected
 @apiMethod
-def interests(wdfId):
+def topics(wdfId):
     mysql = mysqlConnection()
     with mysql as db:  # db will be used to get only the URLs of the connected user
         w = {}
