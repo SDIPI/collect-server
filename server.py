@@ -472,15 +472,23 @@ def getInterests(wdfId):
 @userConnected
 @apiMethod
 def setTag(wdfId):
-    interests = request.args.get('data').split(',')
-    result = []
-    for interest in interests:
-        result.append((wdfId, interest))
+    interestId = request.args.get('interestId')
+    word = request.args.get('word')
     mysql = mysqlConnection()
     with mysql as db:
-        db.cleanUserInterests(wdfId)
-        interests = db.setUserInterests(result)
-    return jsonify(interests)
+        db.setTag(wdfId, interestId, word)
+    resp = {'result': "ok"}
+    return jsonify(resp)
+
+
+@app.route("/api/getTags", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getTopics(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        userTags = db.getUserTags(wdfId)
+    return jsonify(userTags)
 
 
 @app.route("/api/getUrlsTopic", methods=['GET'])  # Call from interface

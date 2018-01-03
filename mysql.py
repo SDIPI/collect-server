@@ -94,6 +94,9 @@ getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE user_id = %s"""
 setUrlTopicSQL = """INSERT INTO `url_topics` (url, topic) VALUES (%s, %s)"""
 getUrlsTopicSQL = """SELECT * FROM `url_topics`"""
 
+setUserTagSQL = """INSERT INTO `user_tags` (user_id, interest_id, word) VALUES (%s, %s, %s)"""
+getUserTagsSQL = """SELECT * FROM `user_tags` WHERE user_id = %s"""
+
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
         self.host = host
@@ -277,6 +280,16 @@ class MySQL:
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getUserInterestsSQL % (wdfId))
             return db.fetchall()
+
+    def getUserTags(self, wdfId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(getUserTagsSQL % (wdfId))
+            return db.fetchall()
+
+    def setTag(self, wdfId, interestId, word):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(setUserTagSQL, (wdfId, interestId, word))
+        self.db.commit()
 
     def callUpdateDf(self, url, word):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
