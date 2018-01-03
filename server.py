@@ -379,10 +379,18 @@ def mostWatchedSites(wdfId):
 @apiMethod
 def topics(wdfId):
     mysql = mysqlConnection()
-    with mysql as db:  # db will be used to get only the URLs of the connected user
-        w = {}
-        wList = []
+    w = {}
+    wList = []
+    fromArg = request.args.get('from')
+    toArg = request.args.get('to')
+    with mysql as db: # db will be used to get only the URLs of the connected user
+        sites = db.getHistorySites(wdfId, fromArg, toArg)
+        sitesDict = {}
+        for site in sites:
+            sitesDict[site['url']] = ['site.sumAmount']
         for url in bestWords:
+            if url not in sitesDict:
+                continue
             words = bestWords[url]
             for word in words:
                 if word['word'] in w:

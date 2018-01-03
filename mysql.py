@@ -94,7 +94,7 @@ getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE user_id = %s"""
 setUrlTopicSQL = """INSERT INTO `url_topics` (url, topic) VALUES (%s, %s)"""
 getUrlsTopicSQL = """SELECT * FROM `url_topics`"""
 
-setUserTagSQL = """INSERT INTO `user_tags` (user_id, interest_id, word) VALUES (%s, %s, %s)"""
+setUserTagSQL = """REPLACE INTO `user_tags` (user_id, interest_id, word) VALUES (%s, %s, %s)"""
 getUserTagsSQL = """SELECT * FROM `user_tags` WHERE user_id = %s"""
 
 class MySQL:
