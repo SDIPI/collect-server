@@ -23,6 +23,9 @@ getLastDayContentsSQL = 'SELECT `id`, `wdfId`, `url`, `timestamp` FROM `content`
 newuserSQL = 'INSERT INTO users (wdfId, facebookAccessToken, wdfToken) VALUES ("%s", "%s", "%s")'
 newOrUpdateuserSQL = "INSERT INTO users (facebookId, facebookAccessToken, wdfToken) VALUES (%(fbId)s, %(fbToken)s, %(wdfToken)s) ON DUPLICATE KEY UPDATE facebookId = %(fbId)s, facebookAccessToken = %(fbToken)s, wdfToken = %(wdfToken)s"
 
+newAnonuserSQL = "INSERT INTO users (wdfToken) VALUES (%s)"
+getUserFromTokenSQL = "SELECT * FROM `users` WHERE `wdfToken` = %s"
+
 # Compute SQL
 emptyTfTableSQL = "TRUNCATE computed_tf"
 emptyDfTableSQL = "TRUNCATE computed_df"
@@ -157,6 +160,16 @@ class MySQL:
         with self.db.cursor() as db:
             db.execute(newOrUpdateuserSQL, {'fbId': int(fbId), 'fbToken': fbToken, 'wdfToken': wdfToken})
         self.db.commit()
+
+    def newAnonUser(self, wdfToken):
+        with self.db.cursor() as db:
+            db.execute(newAnonuserSQL, (wdfToken))
+        self.db.commit()
+
+    def getUserWithToken(self, wdfToken):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(getUserFromTokenSQL)
+            return db.fetchone()
 
     def getUsers(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:

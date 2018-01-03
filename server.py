@@ -247,12 +247,31 @@ def auth():
         return render_template("layout.html", warningMessage="Missing code.")
 
 
+@app.route("/anonauth") # Create a new anonymous account
+def anonauth():
+    if request.values.get('error'):
+        return request.values['error']
+    # Get facebook token + user infos
+    try:
+        # Save infos in db
+        wdf_token = secrets.token_hex(32)
+        with mysqlConnection() as db:
+            db.newAnonUser(wdf_token)
+
+        response = redirect('/authsuccess?code=' + wdf_token)
+        response.set_cookie('wdfToken', wdf_token, 60 * 60 * 24 * 365 * 10, domain=".sdipi.ch")
+        return response
+
+    except MissingCodeError:
+        return render_template("layout.html", warningMessage="Missing code.")
+
+
 @app.route("/authsuccess")  # Redirect from Facebook auth
 def authsuccess():
     global users
     if request.values.get('error'):
         return request.values['error']
-    facebook = facebook_session(state=session.get('oauth2_state'))
+    # facebook = facebook_session(state=session.get('oauth2_state'))
     # user = facebook.get(API_BASE_URL + '/me').json()
     mysql = mysqlConnection()
     with mysql as db:
