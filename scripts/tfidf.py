@@ -9,6 +9,8 @@ from configparser import ConfigParser, NoOptionError
 from queue import Queue
 from math import log
 
+import math
+
 from mysql import MySQL
 
 # Argument parsing
@@ -136,8 +138,15 @@ print("Computing TF-IDF...")
 for url in tfs:
     terms = tfs[url]
     tfidfs[url] = {}
+    sq_sum = 0
     for word in terms:
-        tfidfs[url][word] = terms[word] * log(documents / df[word])
+        tfidf = terms[word] * log(documents / df[word])
+        tfidfs[url][word] = tfidf
+        sq_sum += tfidf**2
+    # Normalization
+    length = math.sqrt(sq_sum)
+    for word in terms:
+        tfidfs[url][word] /= length
 
 with mysql as db:
     print("Emptying computed tables...")
