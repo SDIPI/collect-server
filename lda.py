@@ -11,11 +11,13 @@ import gensim
 import mysql
 from gensim import corpora
 from gensim.models.ldamodel import LdaModel
+from gensim.models.ldamulticore import LdaMulticore
+from gensim.models.callbacks import PerplexityMetric
 
 
 class LDAWDF:
     mysql: mysql.MySQL
-    ldamodel: LdaModel
+    ldamodel: LdaMulticore
     dictionary = None
 
     def __init__(self, mysql):
@@ -34,9 +36,16 @@ class LDAWDF:
 
         doc_term_matrix = [self.dictionary.doc2bow(doc) for doc in documents]
 
+        callbacks = [PerplexityMetric(corpus=doc_term_matrix, logger="shell")]
+
         # Running and Trainign LDA model on the document term matrix.
         print("Starting to train LDA Model...")
-        self.ldamodel = gensim.models.ldamodel.LdaModel(doc_term_matrix, num_topics=10, id2word=self.dictionary, passes=50)
+        self.ldamodel = LdaMulticore(
+            doc_term_matrix,
+            num_topics=1000,
+            id2word=self.dictionary,
+            passes=100,
+            workers=2)
 
     def printTest(self):
         print(self.ldamodel.print_topics(num_topics=10, num_words=5))
@@ -148,11 +157,16 @@ if __name__ == '__main__':
     if wdf.canLoad():
         wdf.load()
     else:
+        print("Training LDA model")
         wdf.trainFromStart()
+        print("Saving LDA model")
         wdf.save()
+        print("LDA model saved")
 
     # Fill the DB if asked
     if args.topics:
+        print("Filling topics into the DB")
         wdf.fillDb()
+        print("DB filled with topics")
 
     wdf.printTest()
