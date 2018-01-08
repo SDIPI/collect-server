@@ -33,6 +33,8 @@ class LDAWDF:
 
         self.dictionary = corpora.Dictionary(documents)
 
+        self.dictionary.filter_extremes(no_below=5, no_above=0.3)
+
         doc_term_matrix = [self.dictionary.doc2bow(doc) for doc in documents]
 
         callbacks = [PerplexityMetric(corpus=doc_term_matrix, logger="shell")]
@@ -41,7 +43,7 @@ class LDAWDF:
         print("Starting to train LDA Model...")
         self.ldamodel = LdaModel(
             doc_term_matrix,
-            num_topics=1000,
+            num_topics=500,
             id2word=self.dictionary,
             passes=100,
             callbacks=callbacks)
