@@ -70,7 +70,7 @@ class LDAWDF:
     def fillDb(self):
         topics = {}
         result = []
-        for topicId in range(0, 10):
+        for topicId in range(0, 500):
             topicTerms = self.ldamodel.get_topic_terms(topicId, 3)
             topicTerms.sort(key=lambda x: x[1], reverse=True)
             words = []
