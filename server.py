@@ -406,16 +406,17 @@ def topics(wdfId):
         sites = db.getHistorySites(wdfId, fromArg, toArg)
         sitesDict = {}
         for site in sites:
-            sitesDict[site['url']] = ['site.sumAmount']
+            sitesDict[site['url']] = site['sumAmount']
         for url in bestWords:
             if url not in sitesDict:
                 continue
+            time = sitesDict[url]
             words = bestWords[url]
             for word in words:
                 if word['word'] in w:
-                    w[word['word']] += word['tfidf']
+                    w[word['word']] += word['tfidf'] * time
                 else:
-                    w[word['word']] = word['tfidf']
+                    w[word['word']] = word['tfidf'] * time
         for el in w:
             wList.append({'word': el, 'weight': w[el]})
 
@@ -423,6 +424,16 @@ def topics(wdfId):
         wWords = [el['word'] for el in wList]
         topics = lda.get_terms_topics(wWords)
     return jsonify(topics)
+
+
+@app.route("/api/allTopics", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def allTopics(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        terms = db.getLdaTopics()
+    return jsonify(terms)
 
 
 @app.route("/api/historySites", methods=['GET'])  # Call from interface
@@ -527,6 +538,18 @@ def getUrlsTopic(wdfId):
         userInterests = db.getUrlsTopic()
     return jsonify(userInterests)
 
+
+# Trackers
+
+
+@app.route("/api/getTrackers", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getTrackers(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        trackers = db.getUrlsTopic()
+    return jsonify(trackers)
 
 @app.errorhandler(401)
 def unauthorized(e):

@@ -96,6 +96,11 @@ getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE user_id = %s"""
 
 setUrlTopicSQL = """INSERT INTO `url_topics` (url, topic) VALUES (%s, %s)"""
 getUrlsTopicSQL = """SELECT * FROM `url_topics`"""
+emptyUrlTopicSQL = """TRUNCATE url_topics"""
+
+setLdaTopicSQL = """INSERT INTO `lda_topics` (`topic_id`, `word`, `value`) VALUES (%s, %s, %s)"""
+getLdaTopicsSQL = """SELECT * FROM `lda_topics`"""
+emptyLdaTopicsSQL = """TRUNCATE lda_topics"""
 
 setUserTagSQL = """REPLACE INTO `user_tags` (user_id, interest_id, word) VALUES (%s, %s, %s)"""
 getUserTagsSQL = """SELECT * FROM `user_tags` WHERE user_id = %s"""
@@ -194,9 +199,24 @@ class MySQL:
             db.execute(emptyBestWordsTableSQL)
         self.db.commit()
 
+    def emptyUrlsTopic(self):
+        with self.db.cursor() as db:
+            db.execute(emptyUrlTopicSQL)
+        self.db.commit()
+
     def setUrlsTopic(self, urlsTopic):
         with self.db.cursor() as db:
             db.executemany(setUrlTopicSQL, urlsTopic)
+        self.db.commit()
+
+    def emptyLdaTopics(self):
+        with self.db.cursor() as db:
+            db.execute(emptyLdaTopicsSQL)
+        self.db.commit()
+
+    def setLdaTopics(self, ldaTopics):
+        with self.db.cursor() as db:
+            db.executemany(setLdaTopicSQL, ldaTopics)
         self.db.commit()
 
     def setTf(self, tfs):
@@ -272,6 +292,11 @@ class MySQL:
     def getUrlsTopic(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getUrlsTopicSQL)
+            return db.fetchall()
+
+    def getLdaTopics(self):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(getLdaTopicsSQL)
             return db.fetchall()
 
     def getInterestsList(self):

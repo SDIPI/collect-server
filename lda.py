@@ -33,7 +33,7 @@ class LDAWDF:
 
         self.dictionary = corpora.Dictionary(documents)
 
-        self.dictionary.filter_extremes(no_below=5, no_above=0.3)
+        self.dictionary.filter_extremes(no_below=5, no_above=0.5)
 
         doc_term_matrix = [self.dictionary.doc2bow(doc) for doc in documents]
 
@@ -70,7 +70,9 @@ class LDAWDF:
     def fillDb(self):
         topics = {}
         result = []
-        for topicId in range(0, 500):
+        nbTopics = self.ldamodel.get_topics().shape[0]
+        # "Old"
+        for topicId in range(0, nbTopics):
             topicTerms = self.ldamodel.get_topic_terms(topicId, 3)
             topicTerms.sort(key=lambda x: x[1], reverse=True)
             words = []
@@ -83,21 +85,33 @@ class LDAWDF:
                 bow = self.dictionary.doc2bow(element['content'].split())
                 docTopics = self.ldamodel.get_document_topics(bow)
                 bestP = 0
-                best = docTopics[0][0]
-                for docTopic in docTopics:
-                    if docTopic[1] > bestP:
-                        best = docTopic[0]
-                        bestP = docTopic[1]
-                result.append((element['url'], topics[best]))
+                if len(docTopics) > 0:
+                    best = docTopics[0][0]
+                    for docTopic in docTopics:
+                        if docTopic[1] > bestP:
+                            best = docTopic[0]
+                            bestP = docTopic[1]
+                    result.append((element['url'], topics[best]))
+            db.emptyUrlsTopic()
             db.setUrlsTopic(result)
+        # "New"
+        terms = []
+        for topicId in range(0, nbTopics):
+            topicTerms = self.ldamodel.get_topic_terms(topicId, 5)
+            topicTerms.sort(key=lambda x: x[1], reverse=True)
+            for topicTerm in topicTerms:
+                terms.append((topicId, self.dictionary.get(topicTerm[0]), str(topicTerm[1])))
+        with mysql as db:
+            db.emptyLdaTopics()
+            db.setLdaTopics(terms)
 
 
     def get_terms_topics(self, keywords):
-        bow = self.dictionary.doc2bow(keywords[:30])
+        bow = self.dictionary.doc2bow(keywords[:20])
         topics = {}
         keywordsResult = {}
         for word in bow:
-            wordTopics = self.ldamodel.get_term_topics(word[0], 0.001)
+            wordTopics = self.ldamodel.get_term_topics(word[0], 0.01)
             keywordsResult[word[0]] = {'word': self.dictionary.get(word[0]), 'topics': wordTopics}
             for wordTopic in wordTopics:
                 wordTopicId = wordTopic[0]
