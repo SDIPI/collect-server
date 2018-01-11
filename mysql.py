@@ -339,6 +339,26 @@ class MySQL:
             db.execute(computeBestWordsSQL)
         self.db.commit()
 
+    # Trackers
+    def getMostPresentTrackers(self, wdfId):
+        getMostPresentTrackersSQL = """SELECT requestDomain, COUNT(urlDomain) AS count FROM `pagerequests` WHERE wdfId = %s AND `urlDomain` != `requestDomain` GROUP BY requestDomain ORDER BY count DESC LIMIT 100"""
+        with self.db.cursor() as db:
+            db.execute(getMostPresentTrackersSQL % wdfId)
+            return db.fetchall()
+
+    def getMostRevealingDomains(self, wdfId):
+        getMostRevealingDomainsSQL = """SELECT urlDomain, COUNT(requestDomain) AS count FROM `pagerequests` WHERE wdfId = %s AND `urlDomain` != `requestDomain` GROUP BY urlDomain ORDER BY count DESC LIMIT 100"""
+        with self.db.cursor() as db:
+            db.execute(getMostRevealingDomainsSQL % wdfId)
+            return db.fetchall()
+
+    def getTrackersNb(self, wdfId):
+        getTrackersNbSQL = """SELECT COUNT(DISTINCT requestDomain) AS count FROM `pagerequests` WHERE wdfId = %s"""
+        with self.db.cursor() as db:
+            db.execute(getTrackersNbSQL % wdfId)
+        return db.fetchone()
+
+
     def __timeCondition(self, fromArg, toArg):
         result = ""
         if fromArg is not None:

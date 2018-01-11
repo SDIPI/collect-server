@@ -45,8 +45,7 @@ class LDAWDF:
             doc_term_matrix,
             num_topics=200,
             id2word=self.dictionary,
-            passes=200,
-            callbacks=callbacks)
+            passes=5)
 
     def printTest(self):
         print(self.ldamodel.print_topics(num_topics=10, num_words=5))

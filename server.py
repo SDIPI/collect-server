@@ -542,14 +542,33 @@ def getUrlsTopic(wdfId):
 # Trackers
 
 
-@app.route("/api/getTrackers", methods=['GET'])  # Call from interface
+@app.route("/api/getMostPresentTrackers", methods=['GET'])  # Call from interface
 @userConnected
 @apiMethod
-def getTrackers(wdfId):
+def getMostPresentTrackers(wdfId):
     mysql = mysqlConnection()
     with mysql as db:
-        trackers = db.getUrlsTopic()
+        trackers = db.getMostPresentTrackers(wdfId)
     return jsonify(trackers)
+
+@app.route("/api/getMostRevealingDomains", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getMostRevealingDomains(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        trackers = db.getMostRevealingDomains(wdfId)
+    return jsonify(trackers)
+
+@app.route("/api/getTrackersStats", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getTrackersStats(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        trackers = db.getTrackersNb(wdfId)
+    resp = {'nbTrackers': trackers['count']}
+    return jsonify(resp)
 
 @app.errorhandler(401)
 def unauthorized(e):
