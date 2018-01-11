@@ -195,7 +195,10 @@ def first():
         if url not in bestWords:
             bestWords[url] = []
         bestWords[url].append({'word': entry['word'], 'tfidf': entry['tfidf']})
-    if lda.canLoad():
+    if app.config['LDA_SUBFOLDER']:
+        print("Loading local LDA Model from " + app.config['LDA_SUBFOLDER'])
+        lda.load(app.config['LDA_SUBFOLDER'])
+    elif lda.canLoad():
         print("Loading local LDA Model...")
         lda.load()
     else:
@@ -312,8 +315,6 @@ def collectActions():
     return resp
 
 def treatRequest(wdfId, data):
-    if isFilteredSite(data['url']):
-        return
     mysql = mysqlConnection()
     with mysql as db:
         db.pageRequest(wdfId, data['url'], data['request'], data['method'])
@@ -619,11 +620,12 @@ def isFilteredSite(url):
     return False
 
 
-def run(ip, port, db_host, db_user, db_pass, db_name):
+def run(ip, port, db_host, db_user, db_pass, db_name, lda):
     app.config['DB_HOST'] = db_host
     app.config['DB_USER'] = db_user
     app.config['DB_PASS'] = db_pass
     app.config['DB_NAME'] = db_name
+    app.config['LDA_SUBFOLDER'] = lda
 
     connection = MySQL(db_host, db_user, db_pass, db_name)
     with connection as test:

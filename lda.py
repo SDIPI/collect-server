@@ -21,8 +21,9 @@ class LDAWDF:
 
     def __init__(self, mysql):
         self.mysql = mysql
-        self.saveFile = './data/lda_model'
-        self.saveFileDict = './data/lda_model_dict'
+        self.dataFolder = './data/'
+        self.saveFile = 'lda_model'
+        self.saveFileDict = 'lda_model_dict'
 
     def trainFromStart(self):
         with self.mysql as db:
@@ -39,13 +40,13 @@ class LDAWDF:
 
         callbacks = [PerplexityMetric(corpus=doc_term_matrix, logger="shell")]
 
-        # Running and Trainign LDA model on the document term matrix.
+        # Running and Training LDA model on the document term matrix.
         print("Starting to train LDA Model...")
         self.ldamodel = LdaModel(
             doc_term_matrix,
             num_topics=200,
             id2word=self.dictionary,
-            passes=5)
+            passes=40)
 
     def printTest(self):
         print(self.ldamodel.print_topics(num_topics=10, num_words=5))
@@ -62,9 +63,13 @@ class LDAWDF:
     def update(self, corpus):
         self.ldamodel.update(corpus)
 
-    def load(self):
-        self.ldamodel = LdaModel.load(self.saveFile)
-        self.dictionary = gensim.corpora.Dictionary.load(self.saveFileDict)
+    def load(self, subfolder=None):
+        if subfolder:
+            sf = subfolder + '/'
+        else:
+            sf = ''
+        self.ldamodel = LdaModel.load(self.dataFolder + sf + self.saveFile)
+        self.dictionary = gensim.corpora.Dictionary.load(self.dataFolder + sf + self.saveFileDict)
 
     def fillDb(self):
         topics = {}

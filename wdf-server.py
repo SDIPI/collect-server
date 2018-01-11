@@ -17,6 +17,7 @@ parser.add_argument("-u", "--user", help="Database user name")
 parser.add_argument("-w", "--password", help="Database's user password")
 parser.add_argument("-d", "--name", help="Database's name")
 parser.add_argument("-p", "--port", help="Port number to listen to")
+parser.add_argument("-l", "--lda", help="Subfolder from which to load LDA model")
 
 args = parser.parse_args()
 
@@ -54,4 +55,9 @@ if args.password:
 else:
     db_name = config.get('database', 'name')
 
-server.run(ip=server_ip, port=server_port, db_host=db_host, db_user=db_user, db_pass=db_pass, db_name=db_name)
+if args.lda:
+    lda = args.lda
+else:
+    lda = None
+
+server.run(ip=server_ip, port=server_port, db_host=db_host, db_user=db_user, db_pass=db_pass, db_name=db_name, lda=lda)
