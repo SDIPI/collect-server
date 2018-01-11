@@ -56,8 +56,8 @@ class LDAWDF:
         self.dictionary.save(self.saveFileDict)
 
     def canLoad(self):
-        my_file = Path(self.saveFile)
-        my_file_dict = Path(self.saveFileDict)
+        my_file = Path(self.dataFolder + self.saveFile)
+        my_file_dict = Path(self.dataFolder + self.saveFileDict)
         return my_file.is_file() and my_file_dict.is_file()
 
     def update(self, corpus):

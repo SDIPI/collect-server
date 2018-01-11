@@ -542,7 +542,6 @@ def getUrlsTopic(wdfId):
 
 # Trackers
 
-
 @app.route("/api/getMostPresentTrackers", methods=['GET'])  # Call from interface
 @userConnected
 @apiMethod
@@ -570,6 +569,18 @@ def getTrackersStats(wdfId):
         trackers = db.getTrackersNb(wdfId)
     resp = {'nbTrackers': trackers['count']}
     return jsonify(resp)
+
+# General stats
+
+@app.route("/api/getGeneralStats", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getGeneralStats(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        stats = db.getGeneralStats()
+    return jsonify(stats)
+
 
 @app.errorhandler(401)
 def unauthorized(e):

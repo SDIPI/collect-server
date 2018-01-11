@@ -358,6 +358,13 @@ class MySQL:
             db.execute(getTrackersNbSQL % wdfId)
         return db.fetchone()
 
+    # General stats
+
+    def getGeneralStats(self):
+        getTrackersNbSQL = """SELECT COUNT(DISTINCT requestDomain) AS trackersNb, COUNT(requestDomain) AS totalRequests FROM `pagerequests`"""
+        with self.db.cursor() as db:
+            db.execute(getTrackersNbSQL)
+        return db.fetchone()
 
     def __timeCondition(self, fromArg, toArg):
         result = ""
