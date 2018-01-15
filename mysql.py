@@ -9,7 +9,7 @@ import pymysql as pymysql
 
 # Collect SQL
 pageviewSQL = 'INSERT IGNORE INTO pageviews (wdfId, url, timestamp) VALUES (%s, %s, CURRENT_TIMESTAMP)'
-pagerequestSQL = 'INSERT INTO pagerequests (wdfId, url, timestamp, request, method) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s)'
+pagerequestSQL = 'INSERT INTO pagerequests (wdfId, url, timestamp, request, method, size, urlDomain, requestDomain) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s)'
 pageeventSQL = 'INSERT INTO `event` (wdfId, url, type, `value`) VALUES (%s, %s, %s, %s)'
 contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`, `language`, `title`) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s)'
 watcheventSQL = 'INSERT INTO `pagewatch` (wdfId, url, timestamp, amount) VALUES (%s, %s, CURRENT_TIMESTAMP, %s)'
@@ -133,9 +133,9 @@ class MySQL:
             db.execute(pageviewSQL, (wdfId, url))
         self.db.commit()
 
-    def pageRequest(self, wdfId, url, request, method):
+    def pageRequest(self, wdfId, url, request, method, size, urlDomain, requestDomain):
         with self.db.cursor() as db:
-            db.execute(pagerequestSQL, (wdfId, url, request, method))
+            db.execute(pagerequestSQL, (wdfId, url, request, method, size, urlDomain, requestDomain))
         self.db.commit()
 
     def pageEvent(self, wdfId, url, eventType, value):

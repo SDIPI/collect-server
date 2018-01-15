@@ -23,6 +23,7 @@ from lxml.html.clean import Cleaner
 from oauthlib.oauth2 import MissingCodeError
 from requests_oauthlib import OAuth2Session
 from stop_words import get_stop_words
+from urllib.parse import urlparse
 
 from lda import LDAWDF
 from mysql import MySQL
@@ -203,9 +204,12 @@ def first():
         lda.load()
     else:
         print("No LDA Model found. Learning from DB...")
-        lda.trainFromStart()
-        print("Saving the model.")
-        lda.save()
+        try:
+            lda.trainFromStart()
+            print("Saving the model.")
+            lda.save()
+        except ValueError:
+            print('Seemingly fresh installation. Not computing LDA.')
 
 
 ##########
@@ -316,8 +320,10 @@ def collectActions():
 
 def treatRequest(wdfId, data):
     mysql = mysqlConnection()
+    urlDomain = urlparse(data['url']).netloc
+    reqDomain = urlparse(data['request']).netloc
     with mysql as db:
-        db.pageRequest(wdfId, data['url'], data['request'], data['method'])
+        db.pageRequest(wdfId, data['url'], data['request'], data['method'], data['size'], urlDomain, reqDomain)
 
 def treatWatch(wdfId, data):
     # Removing filtered sites
