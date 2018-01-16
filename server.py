@@ -61,7 +61,7 @@ def apiMethod(method):
         response = method(*args, **kwds)
         origin = request.environ['HTTP_ORIGIN'] if ('HTTP_ORIGIN' in request.environ) else "*"
         response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Credentials'] = "true"
         return response
 
     return withCORS
@@ -100,6 +100,16 @@ CORS(app)
 app.debug = True
 app.config['SECRET_KEY'] = OAUTH2_CLIENT_SECRET
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+
+
+@app.after_request
+def add_header(r):
+    """
+    Add headers to both force latest IE rendering engine or Chrome Frame,
+    and also to cache the rendered page for 10 minutes.
+    """
+    r.headers['Access-Control-Allow-Credentials'] = "true"
+    return r
 
 
 def getHTML(url: str, wdfId: str, connection: MySQL):
