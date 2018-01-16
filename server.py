@@ -576,6 +576,15 @@ def getMostRevealingDomains(wdfId):
         trackers = db.getMostRevealingDomains(wdfId)
     return jsonify(trackers)
 
+@app.route("/api/getTrackers", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getTrackers(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        trackers = db.getTrackers(wdfId)
+    return jsonify(trackers)
+
 @app.route("/api/getTrackersStats", methods=['GET'])  # Call from interface
 @userConnected
 @apiMethod

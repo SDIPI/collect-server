@@ -352,6 +352,12 @@ class MySQL:
             db.execute(getMostRevealingDomainsSQL % wdfId)
             return db.fetchall()
 
+    def getTrackers(self, wdfId):
+        getTrackersSQL = """SELECT * FROM `precalc_trackers` WHERE wdfId = %s AND `urlDomain` != `reqDomain`"""
+        with self.db.cursor() as db:
+            db.execute(getTrackersSQL % wdfId)
+            return db.fetchall()
+
     def getTrackersNb(self, wdfId):
         getTrackersNbSQL = """SELECT COUNT(DISTINCT requestDomain) AS count FROM `pagerequests` WHERE wdfId = %s"""
         with self.db.cursor() as db:
