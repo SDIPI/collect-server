@@ -98,7 +98,7 @@ setUrlTopicSQL = """INSERT INTO `url_topics` (url, topic) VALUES (%s, %s)"""
 getUrlsTopicSQL = """SELECT * FROM `url_topics`"""
 emptyUrlTopicSQL = """TRUNCATE url_topics"""
 
-setLdaTopicSQL = """INSERT INTO `lda_topics` (`topic_id`, `word`, `value`) VALUES (%s, %s, %s)"""
+setLdaTopicSQL = """INSERT IGNORE INTO `lda_topics` (`topic_id`, `word`, `value`) VALUES (%s, %s, %s)"""
 getLdaTopicsSQL = """SELECT * FROM `lda_topics`"""
 emptyLdaTopicsSQL = """TRUNCATE lda_topics"""
 

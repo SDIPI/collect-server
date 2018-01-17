@@ -1,15 +1,9 @@
 """
 This file is part of wdf-server.
 """
-import threading
 from argparse import ArgumentParser
 from configparser import ConfigParser, NoOptionError
-from queue import Queue
-from math import log
 import pymysql as pymysql
-from urllib.parse import urlparse
-
-import math
 
 from mysql import MySQL
 

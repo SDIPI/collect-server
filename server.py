@@ -325,8 +325,6 @@ def authsuccess():
     global users
     if request.values.get('error'):
         return request.values['error']
-    # facebook = facebook_session(state=session.get('oauth2_state'))
-    # user = facebook.get(API_BASE_URL + '/me').json()
     mysql = mysqlConnection()
     with mysql as db:
         allUsers = db.getUsers()
