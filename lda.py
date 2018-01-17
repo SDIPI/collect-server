@@ -44,9 +44,9 @@ class LDAWDF:
         print("Starting to train LDA Model...")
         self.ldamodel = LdaModel(
             doc_term_matrix,
-            num_topics=200,
+            num_topics=150,
             id2word=self.dictionary,
-            passes=40)
+            passes=100)
 
     def printTest(self):
         print(self.ldamodel.print_topics(num_topics=10, num_words=5))

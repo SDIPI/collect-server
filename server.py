@@ -173,11 +173,10 @@ def mysqlConnection() -> MySQL:
 def idOfToken(token):
     if token is None:
         return None
-    wdfId = None
     for wdfId in users:
         if users[wdfId]['wdfToken'] == token:
-            break
-    return wdfId
+            return wdfId
+    return None
 
 
 def tfIdf(tf, df, documents):
@@ -277,6 +276,44 @@ def anonauth():
 
         response = redirect('/authsuccess?code=' + wdf_token)
         response.set_cookie('wdfToken', wdf_token, 60 * 60 * 24 * 365 * 10, domain=".sdipi.ch")
+        return response
+
+    except MissingCodeError:
+        return render_template("layout.html", warningMessage="Missing code.")
+
+
+@app.route("/reconnect", methods=['POST']) # Sets the cookie as asked
+def reconnect():
+    if request.values.get('error'):
+        return request.values['error']
+    try:
+        data = request.get_json()
+        token = data['accessToken']
+        wdfId = idOfToken(data['accessToken'])
+        if wdfId is None:
+            resp = jsonify({'error': "Not connected"})
+            return resp
+
+        response = jsonify({'success': "Connected", "wdfId": wdfId})
+        response.set_cookie('wdfToken', token, 60 * 60 * 24 * 365 * 10, domain=".sdipi.ch")
+        return response
+
+    except MissingCodeError:
+        return render_template("layout.html", warningMessage="Missing code.")
+
+
+@app.route("/disconnect") # Sets the cookie as asked
+@userConnected
+def disconnect(wdfId):
+    if request.values.get('error'):
+        return request.values['error']
+    try:
+        if wdfId is None:
+            resp = jsonify({'error': "Not connected"})
+            return resp
+
+        response = jsonify({'success': "Disconnected"})
+        response.set_cookie('wdfToken', '', 0, domain=".sdipi.ch")
         return response
 
     except MissingCodeError:
