@@ -56,7 +56,7 @@ else:
 def mysqlConnection() -> MySQL:
     return MySQL(db_host, db_user, db_pass, db_name)
 
-selectSQL = "SELECT wdfId, urlDomain, requestDomain, COUNT(size) as 'amount', SUM(size) as 'size' FROM `pagerequests` WHERE id > 1628787 AND size IS NOT NULL GROUP BY `wdfId`,`urlDomain`,`requestDomain`"
+selectSQL = "SELECT wdfId, urlDomain, requestDomain, COUNT(size) as 'amount', SUM(size) as 'size' FROM `pagerequests` GROUP BY `wdfId`,`urlDomain`,`requestDomain`"
 updateSQL = "INSERT INTO `precalc_trackers` (wdfId, urlDomain, reqDomain, amount, size) VALUES (%(id)s, %(url)s, %(request)s, %(amount)s, %(size)s) ON DUPLICATE KEY UPDATE amount = %(amount)s, size = %(size)s"
 
 mysql = mysqlConnection()
@@ -70,6 +70,8 @@ domains = []
 domainsDict = {}
 print("Preparing update...")
 for req in requests:
+    if req['size'] == None or req['urlDomain'] == None or req['requestDomain'] == None or req['amount'] == None:
+        continue
     url = req['urlDomain']
     request = req['requestDomain']
     wdfId = str(req['wdfId'])
