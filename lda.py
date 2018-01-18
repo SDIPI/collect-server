@@ -110,12 +110,12 @@ class LDAWDF:
             db.setLdaTopics(terms)
 
 
-    def get_terms_topics(self, keywords):
-        bow = self.dictionary.doc2bow(keywords[:20])
+    def get_terms_topics(self, keywords, wordWeights):
+        bow = self.dictionary.doc2bow(keywords[:30])
         topics = {}
         keywordsResult = {}
         for word in bow:
-            wordTopics = self.ldamodel.get_term_topics(word[0], 0.01)
+            wordTopics = self.ldamodel.get_term_topics(word[0], 0.05)
             keywordsResult[word[0]] = {'word': self.dictionary.get(word[0]), 'topics': wordTopics}
             for wordTopic in wordTopics:
                 wordTopicId = wordTopic[0]

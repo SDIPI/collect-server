@@ -474,7 +474,7 @@ def topics(wdfId):
 
         wList.sort(key=lambda x: x['weight'], reverse=True)
         wWords = [el['word'] for el in wList]
-        topics = lda.get_terms_topics(wWords)
+        topics = lda.get_terms_topics(wWords, wList)
     return jsonify(topics)
 
 
