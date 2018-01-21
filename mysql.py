@@ -105,6 +105,25 @@ emptyLdaTopicsSQL = """TRUNCATE lda_topics"""
 setUserTagSQL = """REPLACE INTO `user_tags` (user_id, interest_id, word) VALUES (%s, %s, %s)"""
 getUserTagsSQL = """SELECT * FROM `user_tags` WHERE user_id = %s"""
 
+setCurrentUrlTopicSQL = """INSERT INTO `current_url_topics` (url, topic, probability) VALUES (%s, %s, %s)"""
+getCurrentUrlsTopicSQL = """SELECT * FROM `current_url_topics`"""
+emptyCurrentUrlTopicSQL = """TRUNCATE current_url_topics"""
+
+getBestTopicsSQL1 = """
+SELECT c1.wdfId, c1.url, c1.time, precalc_topics.topics FROM
+(
+    SELECT `pagewatch`.`wdfId`, `pagewatch`.`url`, CAST(SUM(`pagewatch`.`amount`) AS UNSIGNED) AS time
+    FROM `pagewatch`
+    WHERE wdfId=%s"""
+
+getBestTopicsSQL2 = """
+    GROUP BY wdfId, url
+    ORDER BY SUM(`amount`) DESC
+    LIMIT 200
+) AS c1
+LEFT JOIN precalc_topics ON c1.url = precalc_topics.url
+"""
+
 class MySQL:
     def __init__(self, host, user, password, dbname='connectserver'):
         self.host = host
@@ -209,6 +228,16 @@ class MySQL:
             db.executemany(setUrlTopicSQL, urlsTopic)
         self.db.commit()
 
+    def emptyCurrentUrlsTopic(self):
+        with self.db.cursor() as db:
+            db.execute(emptyCurrentUrlTopicSQL)
+        self.db.commit()
+
+    def setCurrentUrlsTopic(self, urlsTopic):
+        with self.db.cursor() as db:
+            db.executemany(setCurrentUrlTopicSQL, urlsTopic)
+        self.db.commit()
+
     def emptyLdaTopics(self):
         with self.db.cursor() as db:
             db.execute(emptyLdaTopicsSQL)
@@ -248,6 +277,12 @@ class MySQL:
             db.executemany(dfSQL, list)
         self.db.commit()
 
+    def setPrecalcTopics(self):
+        fillSQL = """INSERT INTO `precalc_topics`(`url`, `topics`) SELECT `url`, CONCAT('{', GROUP_CONCAT(`topic`, ': ' ,`probability` SEPARATOR ', '), '}') AS topics FROM current_url_topics GROUP BY `url`"""
+        with self.db.cursor() as db:
+            db.execute(fillSQL)
+        self.db.commit()
+
     def setContentText(self, url, text, title, language):
         with self.db.cursor() as db:
             db.execute(contentTextSQL, (url, text, title, language))
@@ -264,6 +299,13 @@ class MySQL:
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             timeConditions = self.__timeCondition(fromArg, toArg)
             query = mostWatchedSitesTemplateSQL1 + timeConditions + mostWatchedSitesTemplateSQL2
+            db.execute(query, (wdfId))
+            return db.fetchall()
+
+    def getMostWatchedAndTopics(self, wdfId, fromArg, toArg):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            timeConditions = self.__timeCondition(fromArg, toArg)
+            query = getBestTopicsSQL1 + timeConditions + getBestTopicsSQL2
             db.execute(query, (wdfId))
             return db.fetchall()
 
@@ -292,6 +334,11 @@ class MySQL:
     def getUrlsTopic(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(getUrlsTopicSQL)
+            return db.fetchall()
+
+    def getCurrentUrlsTopic(self):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(getCurrentUrlsTopicSQL)
             return db.fetchall()
 
     def getLdaTopics(self):

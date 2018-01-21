@@ -439,7 +439,7 @@ def mostWatchedSites(wdfId):
         return jsonify({'error': "Incorrect parameter to"})
     mysql = mysqlConnection()
     with mysql as db:
-        mostWatched = db.getMostWatchedSites(wdfId, fromArg, toArg)[:200]
+        mostWatched = db.getMostWatchedAndTopics(wdfId, fromArg, toArg)[:200]
     for site in mostWatched:
         site['words'] = bestWords[site['url']] if site['url'] in bestWords else []
     return jsonify(mostWatched)

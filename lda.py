@@ -52,8 +52,8 @@ class LDAWDF:
         print(self.ldamodel.print_topics(num_topics=10, num_words=5))
 
     def save(self):
-        self.ldamodel.save(self.saveFile)
-        self.dictionary.save(self.saveFileDict)
+        self.ldamodel.save(self.dataFolder + self.saveFile)
+        self.dictionary.save(self.dataFolder + self.saveFileDict)
 
     def canLoad(self):
         my_file = Path(self.dataFolder + self.saveFile)
@@ -74,7 +74,9 @@ class LDAWDF:
     def fillDb(self):
         topics = {}
         result = []
+        result2 = []
         nbTopics = self.ldamodel.get_topics().shape[0]
+        topicsPerDoc = 5
         # "Old"
         for topicId in range(0, nbTopics):
             topicTerms = self.ldamodel.get_topic_terms(topicId, 3)
@@ -87,17 +89,17 @@ class LDAWDF:
             contentsText = db.getContentsText()
             for element in contentsText:
                 bow = self.dictionary.doc2bow(element['content'].split())
-                docTopics = self.ldamodel.get_document_topics(bow)
-                bestP = 0
+                docTopics = self.ldamodel.get_document_topics(bow, minimum_probability=0.05)
                 if len(docTopics) > 0:
-                    best = docTopics[0][0]
+                    docTopics.sort(key=lambda x: x[1], reverse=True)
+                    result.append((element['url'], topics[docTopics[0][0]]))
                     for docTopic in docTopics:
-                        if docTopic[1] > bestP:
-                            best = docTopic[0]
-                            bestP = docTopic[1]
-                    result.append((element['url'], topics[best]))
+                        result2.append((element['url'], docTopic[0], str(docTopic[1])))
             db.emptyUrlsTopic()
             db.setUrlsTopic(result)
+            db.emptyCurrentUrlsTopic()
+            db.setCurrentUrlsTopic(result2)
+            db.setPrecalcTopics()
         # "New"
         terms = []
         for topicId in range(0, nbTopics):
