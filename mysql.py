@@ -278,8 +278,10 @@ class MySQL:
         self.db.commit()
 
     def setPrecalcTopics(self):
-        fillSQL = """INSERT INTO `precalc_topics`(`url`, `topics`) SELECT `url`, CONCAT('{', GROUP_CONCAT(`topic`, ': ' ,`probability` SEPARATOR ', '), '}') AS topics FROM current_url_topics GROUP BY `url`"""
+        emptySQL = """TRUNCATE `precalc_topics`;"""
+        fillSQL = """INSERT INTO `precalc_topics`(`url`, `topics`) SELECT `url`, CONCAT('{', GROUP_CONCAT('"', `topic`, '": ' ,`probability` ORDER BY `probability` DESC SEPARATOR ', '), '}') AS topics FROM current_url_topics GROUP BY `url`"""
         with self.db.cursor() as db:
+            db.execute(emptySQL)
             db.execute(fillSQL)
         self.db.commit()
 
