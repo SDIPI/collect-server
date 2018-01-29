@@ -357,7 +357,7 @@ def collectActions():
         elif actionType == 'view':
             treatView(wdfId, actionData)
         elif actionType == 'event':
-            treatEvent(wdfId, actionData)
+            continue
 
     resp = Response('{"result":"ok"}')
 
@@ -390,13 +390,6 @@ def treatView(wdfId, data):
     thread = Thread(target=getHTML, args=(data['url'], wdfId, mysql))
     thread.name = "Thread_getHTML_" + data['url']
     thread.start()
-
-def treatEvent(wdfId, data):
-    if isFilteredSite(data['url']):
-        return
-    mysql = mysqlConnection()
-    with mysql as db:
-        db.pageEvent(wdfId, data['url'], data['type'], data['value'])
 
 #
 # /api/
@@ -443,39 +436,6 @@ def mostWatchedSites(wdfId):
     for site in mostWatched:
         site['words'] = bestWords[site['url']] if site['url'] in bestWords else []
     return jsonify(mostWatched)
-
-
-@app.route("/api/topics", methods=['GET'])  # Call from interface
-@userConnected
-@apiMethod
-def topics(wdfId):
-    mysql = mysqlConnection()
-    w = {}
-    wList = []
-    fromArg = request.args.get('from')
-    toArg = request.args.get('to')
-    with mysql as db: # db will be used to get only the URLs of the connected user
-        sites = db.getHistorySites(wdfId, fromArg, toArg)
-        sitesDict = {}
-        for site in sites:
-            sitesDict[site['url']] = site['sumAmount']
-        for url in bestWords:
-            if url not in sitesDict:
-                continue
-            time = sitesDict[url]
-            words = bestWords[url]
-            for word in words:
-                if word['word'] in w:
-                    w[word['word']] += word['tfidf'] * time
-                else:
-                    w[word['word']] = word['tfidf'] * time
-        for el in w:
-            wList.append({'word': el, 'weight': w[el]})
-
-        wList.sort(key=lambda x: x['weight'], reverse=True)
-        wWords = [el['word'] for el in wList]
-        topics = lda.get_terms_topics(wWords, wList)
-    return jsonify(topics)
 
 
 @app.route("/api/allTopics", methods=['GET'])  # Call from interface
@@ -563,10 +523,12 @@ def getInterests(wdfId):
 @apiMethod
 def setTag(wdfId):
     interestId = request.args.get('interestId')
-    word = request.args.get('word')
+    topicId = request.args.get('topicId')
+    words = request.args.get('words')
     mysql = mysqlConnection()
     with mysql as db:
-        db.setTag(wdfId, interestId, word)
+        db.setTag(wdfId, interestId, words)
+        db.setCurrentTag(wdfId, interestId, topicId)
     resp = {'result': "ok"}
     return jsonify(resp)
 
@@ -574,10 +536,20 @@ def setTag(wdfId):
 @app.route("/api/getTags", methods=['GET'])  # Call from interface
 @userConnected
 @apiMethod
-def getTopics(wdfId):
+def getTags(wdfId):
     mysql = mysqlConnection()
     with mysql as db:
         userTags = db.getUserTags(wdfId)
+    return jsonify(userTags)
+
+
+@app.route("/api/getCurrentTags", methods=['GET'])  # Call from interface
+@userConnected
+@apiMethod
+def getCurrentTags(wdfId):
+    mysql = mysqlConnection()
+    with mysql as db:
+        userTags = db.getUserCurrentTags(wdfId)
     return jsonify(userTags)
 
 

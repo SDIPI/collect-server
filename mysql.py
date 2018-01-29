@@ -105,9 +105,14 @@ emptyLdaTopicsSQL = """TRUNCATE lda_topics"""
 setUserTagSQL = """REPLACE INTO `user_tags` (user_id, interest_id, word) VALUES (%s, %s, %s)"""
 getUserTagsSQL = """SELECT * FROM `user_tags` WHERE user_id = %s"""
 
+setUserCurrentTagSQL = """REPLACE INTO `current_user_tags` (user_id, interest_id, topic_id) VALUES (%s, %s, %s)"""
+getUserCurrentTagsSQL = """SELECT * FROM `current_user_tags` WHERE user_id = %s"""
+
 setCurrentUrlTopicSQL = """INSERT INTO `current_url_topics` (url, topic, probability) VALUES (%s, %s, %s)"""
 getCurrentUrlsTopicSQL = """SELECT * FROM `current_url_topics`"""
 emptyCurrentUrlTopicSQL = """TRUNCATE current_url_topics"""
+
+emptyCurrentUserTagsSQL = """TRUNCATE current_user_tags"""
 
 getBestTopicsSQL1 = """
 SELECT c1.wdfId, c1.url, c1.time, precalc_topics.topics FROM
@@ -231,6 +236,11 @@ class MySQL:
     def emptyCurrentUrlsTopic(self):
         with self.db.cursor() as db:
             db.execute(emptyCurrentUrlTopicSQL)
+        self.db.commit()
+
+    def emptyCurrentUserTags(self):
+        with self.db.cursor() as db:
+            db.execute(emptyCurrentUserTagsSQL)
         self.db.commit()
 
     def setCurrentUrlsTopic(self, urlsTopic):
@@ -376,6 +386,16 @@ class MySQL:
     def setTag(self, wdfId, interestId, word):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(setUserTagSQL, (wdfId, interestId, word))
+        self.db.commit()
+
+    def getUserCurrentTags(self, wdfId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(getUserCurrentTagsSQL % (wdfId))
+            return db.fetchall()
+
+    def setCurrentTag(self, wdfId, interestId, topicId):
+        with self.db.cursor(pymysql.cursors.DictCursor) as db:
+            db.execute(setUserCurrentTagSQL, (wdfId, interestId, topicId))
         self.db.commit()
 
     def callUpdateDf(self, url, word):

@@ -18,6 +18,7 @@ class LDAWDF:
     mysql: mysql.MySQL
     ldamodel: LdaModel
     dictionary = None
+    corpus = None
 
     def __init__(self, mysql):
         self.mysql = mysql
@@ -38,15 +39,15 @@ class LDAWDF:
 
         doc_term_matrix = [self.dictionary.doc2bow(doc) for doc in documents]
 
-        callbacks = [PerplexityMetric(corpus=doc_term_matrix, logger="shell")]
+        self.corpus = doc_term_matrix
 
         # Running and Training LDA model on the document term matrix.
         print("Starting to train LDA Model...")
         self.ldamodel = LdaModel(
             doc_term_matrix,
-            num_topics=100,
+            num_topics=200,
             id2word=self.dictionary,
-            passes=200)
+            passes=100)
 
     def printTest(self):
         print(self.ldamodel.print_topics(num_topics=10, num_words=5))
@@ -76,7 +77,6 @@ class LDAWDF:
         result = []
         result2 = []
         nbTopics = self.ldamodel.get_topics().shape[0]
-        topicsPerDoc = 5
         # "Old"
         for topicId in range(0, nbTopics):
             topicTerms = self.ldamodel.get_topic_terms(topicId, 3)
@@ -98,6 +98,7 @@ class LDAWDF:
             db.emptyUrlsTopic()
             db.setUrlsTopic(result)
             db.emptyCurrentUrlsTopic()
+            db.emptyCurrentUserTags()
             db.setCurrentUrlsTopic(result2)
             db.setPrecalcTopics()
         # "New"
@@ -112,7 +113,7 @@ class LDAWDF:
             db.setLdaTopics(terms)
 
 
-    def get_terms_topics(self, keywords, wordWeights):
+    def get_terms_topics(self, keywords):
         bow = self.dictionary.doc2bow(keywords[:30])
         topics = {}
         keywordsResult = {}
@@ -191,3 +192,6 @@ if __name__ == '__main__':
         print("DB filled with topics")
 
     wdf.printTest()
+
+    print("Trying to compute perplexity")
+    wdf.ldamodel.bound(wdf.corpus)
