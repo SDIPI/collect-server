@@ -10,7 +10,6 @@ import pymysql as pymysql
 # Collect SQL
 pageviewSQL = 'INSERT IGNORE INTO pageviews (wdfId, url, timestamp) VALUES (%s, %s, CURRENT_TIMESTAMP)'
 pagerequestSQL = 'INSERT INTO pagerequests (wdfId, url, timestamp, request, method, size, urlDomain, requestDomain) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s)'
-pageeventSQL = 'INSERT INTO `event` (wdfId, url, type, `value`) VALUES (%s, %s, %s, %s)'
 contentSQL = 'INSERT INTO `content` (wdfId, url, timestamp, `content`, `language`, `title`) VALUES (%s, %s, CURRENT_TIMESTAMP, %s, %s, %s)'
 watcheventSQL = 'INSERT INTO `pagewatch` (wdfId, url, timestamp, amount) VALUES (%s, %s, CURRENT_TIMESTAMP, %s)'
 contentTextSQL = 'INSERT IGNORE INTO `content_text` (url, `content`, `title`, `language`) VALUES (%s, %s, %s, %s)'
@@ -20,8 +19,8 @@ getUsersSQL = 'SELECT * FROM `users`'
 getContentsTextSQL = 'SELECT * FROM `content_text`'
 getLastDayContentsSQL = 'SELECT `id`, `wdfId`, `url`, `timestamp` FROM `content` WHERE url LIKE CONCAT(\'%s\', \'%%\') AND timestamp >= DATE_ADD(NOW(), INTERVAL -1 DAY)'
 
-newuserSQL = 'INSERT INTO users (wdfId, facebookAccessToken, wdfToken) VALUES ("%s", "%s", "%s")'
-newOrUpdateuserSQL = "INSERT INTO users (facebookId, facebookAccessToken, wdfToken) VALUES (%(fbId)s, %(fbToken)s, %(wdfToken)s) ON DUPLICATE KEY UPDATE facebookId = %(fbId)s, facebookAccessToken = %(fbToken)s, wdfToken = %(wdfToken)s"
+newuserSQL = 'INSERT INTO users (wdfId, wdfToken) VALUES ("%s", "%s", "%s")'
+newOrUpdateuserSQL = "INSERT INTO users (wdfToken) VALUES (%(wdfToken)s) ON DUPLICATE KEY UPDATE wdfToken = %(wdfToken)s"
 
 newAnonuserSQL = "INSERT INTO users (wdfToken) VALUES (%s)"
 getUserFromTokenSQL = "SELECT * FROM `users` WHERE `wdfToken` = %s"
@@ -90,19 +89,19 @@ bestWordsSQL = """SELECT * FROM `computed_bestwords`"""
 
 interestsListSQL = """SELECT * FROM `interests`"""
 
-cleanUserInterestsSQL = """DELETE FROM `user_interests` where user_id = %s"""
-addUserInterestSQL = """INSERT IGNORE INTO `user_interests` (user_id, interest_id) VALUES (%s, %s)"""
-getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE user_id = %s"""
+cleanUserInterestsSQL = """DELETE FROM `user_interests` where wdfId = %s"""
+addUserInterestSQL = """INSERT IGNORE INTO `user_interests` (wdfId, interest_id) VALUES (%s, %s)"""
+getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE wdfId = %s"""
 
 setLdaTopicSQL = """INSERT IGNORE INTO `lda_topics` (`topic_id`, `word`, `value`) VALUES (%s, %s, %s)"""
 getLdaTopicsSQL = """SELECT * FROM `lda_topics`"""
 emptyLdaTopicsSQL = """TRUNCATE lda_topics"""
 
-setUserTagSQL = """REPLACE INTO `user_tags` (user_id, interest_id, word) VALUES (%s, %s, %s)"""
-getUserTagsSQL = """SELECT * FROM `user_tags` WHERE user_id = %s"""
+setUserTagSQL = """REPLACE INTO `user_tags` (wdfId, interest_id, word) VALUES (%s, %s, %s)"""
+getUserTagsSQL = """SELECT * FROM `user_tags` WHERE wdfId = %s"""
 
-setUserCurrentTagSQL = """REPLACE INTO `current_user_tags` (user_id, interest_id, topic_id) VALUES (%s, %s, %s)"""
-getUserCurrentTagsSQL = """SELECT * FROM `current_user_tags` WHERE user_id = %s"""
+setUserCurrentTagSQL = """REPLACE INTO `current_user_tags` (wdfId, interest_id, topic_id) VALUES (%s, %s, %s)"""
+getUserCurrentTagsSQL = """SELECT * FROM `current_user_tags` WHERE wdfId = %s"""
 
 setCurrentUrlTopicSQL = """INSERT INTO `current_url_topics` (url, topic, probability) VALUES (%s, %s, %s)"""
 getCurrentUrlsTopicSQL = """SELECT * FROM `current_url_topics`"""
@@ -156,11 +155,6 @@ class MySQL:
     def pageRequest(self, wdfId, url, request, method, size, urlDomain, requestDomain):
         with self.db.cursor() as db:
             db.execute(pagerequestSQL, (wdfId, url, request, method, size, urlDomain, requestDomain))
-        self.db.commit()
-
-    def pageEvent(self, wdfId, url, eventType, value):
-        with self.db.cursor() as db:
-            db.execute(pageeventSQL, (wdfId, url, eventType, value))
         self.db.commit()
 
     def watchEvents(self, wdfId, urls):
@@ -217,16 +211,6 @@ class MySQL:
             db.execute(emptyDfTableSQL)
             db.execute(emptyTfIdfTableSQL)
             db.execute(emptyBestWordsTableSQL)
-        self.db.commit()
-
-    def emptyUrlsTopic(self):
-        with self.db.cursor() as db:
-            db.execute(emptyUrlTopicSQL)
-        self.db.commit()
-
-    def setUrlsTopic(self, urlsTopic):
-        with self.db.cursor() as db:
-            db.executemany(setUrlTopicSQL, urlsTopic)
         self.db.commit()
 
     def emptyCurrentUrlsTopic(self):
