@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Client :  localhost:3306
--- Généré le :  Mer 13 Décembre 2017 à 20:26
+-- Généré le :  Mar 30 Janvier 2018 à 15:14
 -- Version du serveur :  5.7.20-0ubuntu0.17.04.1
 -- Version de PHP :  7.0.22-0ubuntu0.17.04.1
 
@@ -75,7 +75,7 @@ CREATE TABLE `computed_tfidf` (
 
 CREATE TABLE `content` (
   `id` int(11) NOT NULL,
-  `wdfId` varchar(64) NOT NULL,
+  `wdfId` int(11) NOT NULL,
   `url` varchar(1024) NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `content` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -99,16 +99,25 @@ CREATE TABLE `content_text` (
 -- --------------------------------------------------------
 
 --
--- Structure de la table `event`
+-- Structure de la table `current_url_topics`
 --
 
-CREATE TABLE `event` (
-  `wdfId` varchar(64) NOT NULL,
-  `url` varchar(512) NOT NULL,
-  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `type` varchar(32) NOT NULL,
-  `value` varchar(512) DEFAULT NULL,
-  `id` int(11) NOT NULL
+CREATE TABLE `current_url_topics` (
+  `url` varchar(1024) NOT NULL,
+  `topic` int(11) NOT NULL,
+  `probability` float NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `current_user_tags`
+--
+
+CREATE TABLE `current_user_tags` (
+  `wdfId` int(11) NOT NULL,
+  `topic_id` int(11) NOT NULL,
+  `interest_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -122,113 +131,17 @@ CREATE TABLE `interests` (
   `name` varchar(96) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- --------------------------------------------------------
+
 --
--- Contenu de la table `interests`
+-- Structure de la table `lda_topics`
 --
 
-INSERT INTO `interests` (`id`, `name`) VALUES
-(1, 'Banking & Finance / Avid Investor'),
-(2, 'Beauty & Wellness / Beauty Maven'),
-(3, 'Food & Dining / Cooking Enthusiast'),
-(4, 'Food & Dining / Cooking Enthusiast / 30 Minute Chef'),
-(5, 'Food & Dining / Cooking Enthusiast / Aspiring Chef'),
-(6, 'Food & Dining / Fast Food Craver'),
-(7, 'Food & Dining / Foodie'),
-(8, 'Home & Garden / Do-It-Yourselfer'),
-(9, 'Home & Garden / Home Decor Enthusiast'),
-(10, 'Lifestyles & Hobbies / Art & Theater Aficionado'),
-(11, 'Lifestyles & Hobbies / Business Professional'),
-(12, 'Lifestyles & Hobbies / Family-Focused'),
-(13, 'Lifestyles & Hobbies / Fashionista'),
-(14, 'Lifestyles & Hobbies / Green Living Enthusiast'),
-(15, 'Lifestyles & Hobbies / Nightlife Enthusiast'),
-(16, 'Lifestyles & Hobbies / Outdoor Enthusiast'),
-(17, 'Lifestyles & Hobbies / Pet Lover'),
-(18, 'Lifestyles & Hobbies / Pet Lover / Cat Lover'),
-(19, 'Lifestyles & Hobbies / Pet Lover / Dog Lover'),
-(20, 'Lifestyles & Hobbies / Shutterbug'),
-(21, 'Lifestyles & Hobbies / Thrill Seeker'),
-(22, 'Media & Entertainment / Book Lover'),
-(23, 'Media & Entertainment / Comics & Animation Fan'),
-(24, 'Media & Entertainment / Gamer'),
-(25, 'Media & Entertainment / Gamer / Action Game Fan'),
-(26, 'Media & Entertainment / Gamer / Adventure & Strategy Game Fan'),
-(27, 'Media & Entertainment / Gamer / Casual & Social Gamer'),
-(28, 'Media & Entertainment / Gamer / Driving & Racing Game Fan'),
-(29, 'Media & Entertainment / Gamer / Hardcore Gamer'),
-(30, 'Media & Entertainment / Gamer / Roleplaying Game Fan'),
-(31, 'Media & Entertainment / Gamer / Shooter Game Fan'),
-(32, 'Media & Entertainment / Gamer / Sports Game Fan'),
-(33, 'Media & Entertainment / Movie Lover'),
-(34, 'Media & Entertainment / Movie Lover / Action & Adventure Movie Fan'),
-(35, 'Media & Entertainment / Movie Lover / Comedy Movie Fan'),
-(36, 'Media & Entertainment / Movie Lover / Family Movie Fan'),
-(37, 'Media & Entertainment / Movie Lover / Horror Movie Fan'),
-(38, 'Media & Entertainment / Movie Lover / Romance & Drama Movie Fan'),
-(39, 'Media & Entertainment / Movie Lover / Sci-Fi & Fantasy Movie Fan'),
-(40, 'Media & Entertainment / Movie Lover / South Asian Film Fan'),
-(41, 'Media & Entertainment / Music Lover'),
-(42, 'Media & Entertainment / Music Lover / Blues Fan'),
-(43, 'Media & Entertainment / Music Lover / Classical Music Enthusiast'),
-(44, 'Media & Entertainment / Music Lover / Country Music Fan'),
-(45, 'Media & Entertainment / Music Lover / Electronica & Dance Music Fan'),
-(46, 'Media & Entertainment / Music Lover / Folk & Traditional Music Enthusiast'),
-(47, 'Media & Entertainment / Music Lover / Indie & Alternative Rock Fan'),
-(48, 'Media & Entertainment / Music Lover / Jazz Enthusiast'),
-(49, 'Media & Entertainment / Music Lover / Metalhead'),
-(50, 'Media & Entertainment / Music Lover / Pop Music Fan'),
-(51, 'Media & Entertainment / Music Lover / Rap & Hip Hop Fan'),
-(52, 'Media & Entertainment / Music Lover / Rock Music Fan'),
-(53, 'Media & Entertainment / Music Lover / Spanish-Language Music Fan'),
-(54, 'Media & Entertainment / Music Lover / World Music Fan'),
-(55, 'Media & Entertainment / TV Lover'),
-(56, 'Media & Entertainment / TV Lover / Family Television Fan'),
-(57, 'Media & Entertainment / TV Lover / Game, Reality & Talk Show Fan'),
-(58, 'Media & Entertainment / TV Lover / Sci-Fi & Fantasy TV Fan'),
-(59, 'Media & Entertainment / TV Lover / TV Comedy Fan'),
-(60, 'Media & Entertainment / TV Lover / TV Drama Fan'),
-(61, 'News & Politics / News Junkie'),
-(62, 'News & Politics / News Junkie / Business & Economic News Junkie'),
-(63, 'News & Politics / News Junkie / Entertainment & Celebrity News Junkie'),
-(64, 'News & Politics / News Junkie / Local News Junkie'),
-(65, 'News & Politics / News Junkie / Political News Junkie'),
-(66, 'News & Politics / News Junkie / Women\'s Media Fan'),
-(67, 'News & Politics / News Junkie / World News Junkie'),
-(68, 'Shoppers / Bargain Hunter'),
-(69, 'Shoppers / Luxury Shopper'),
-(70, 'Shoppers / Shopaholic'),
-(71, 'Shoppers / Value Shopper'),
-(72, 'Sports & Fitness / Health & Fitness Buff'),
-(73, 'Sports & Fitness / Sports Fan'),
-(74, 'Sports & Fitness / Sports Fan / American Football Fan'),
-(75, 'Sports & Fitness / Sports Fan / Australian Football Fan'),
-(76, 'Sports & Fitness / Sports Fan / Baseball Fan'),
-(77, 'Sports & Fitness / Sports Fan / Basketball Fan'),
-(78, 'Sports & Fitness / Sports Fan / Boating & Sailing Enthusiast'),
-(79, 'Sports & Fitness / Sports Fan / Cricket Enthusiast'),
-(80, 'Sports & Fitness / Sports Fan / Cycling Enthusiast'),
-(81, 'Sports & Fitness / Sports Fan / Fight & Wrestling Fan'),
-(82, 'Sports & Fitness / Sports Fan / Golf Enthusiast'),
-(83, 'Sports & Fitness / Sports Fan / Hockey Fan'),
-(84, 'Sports & Fitness / Sports Fan / Motor Sports Enthusiast'),
-(85, 'Sports & Fitness / Sports Fan / Racquetball Enthusiast'),
-(86, 'Sports & Fitness / Sports Fan / Rugby Enthusiast'),
-(87, 'Sports & Fitness / Sports Fan / Running Enthusiast'),
-(88, 'Sports & Fitness / Sports Fan / Soccer Fan'),
-(89, 'Sports & Fitness / Sports Fan / Tennis Enthusiast'),
-(90, 'Sports & Fitness / Sports Fan / Water Sports Enthusiast'),
-(91, 'Technology / Mobile Enthusiast'),
-(92, 'Technology / Social Media Enthusiast'),
-(93, 'Technology / Technophile'),
-(94, 'Travel / Business Traveler'),
-(95, 'Travel / Travel Buff'),
-(96, 'Travel / Travel Buff / Beachbound Traveler'),
-(97, 'Travel / Travel Buff / Family Vacationer'),
-(98, 'Travel / Travel Buff / Luxury Traveler'),
-(99, 'Vehicles & Transportation / Auto Enthusiast'),
-(100, 'Vehicles & Transportation / Auto Enthusiast / Motorcycle Enthusiast'),
-(101, 'Vehicles & Transportation / Auto Enthusiast / Performance & Luxury Vehicle Enthusiast'),
-(102, 'Vehicles & Transportation / Auto Enthusiast / Truck & SUV Enthusiast');
+CREATE TABLE `lda_topics` (
+  `topic_id` int(11) NOT NULL,
+  `word` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `value` float NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -237,12 +150,15 @@ INSERT INTO `interests` (`id`, `name`) VALUES
 --
 
 CREATE TABLE `pagerequests` (
-  `wdfId` varchar(64) NOT NULL,
+  `wdfId` int(11) NOT NULL,
   `url` varchar(1024) NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `request` varchar(2048) NOT NULL,
   `method` varchar(8) NOT NULL,
-  `id` int(11) NOT NULL
+  `size` int(10) UNSIGNED DEFAULT NULL,
+  `id` int(11) NOT NULL,
+  `urlDomain` varchar(1024) DEFAULT NULL,
+  `requestDomain` varchar(1024) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -252,7 +168,7 @@ CREATE TABLE `pagerequests` (
 --
 
 CREATE TABLE `pageviews` (
-  `wdfId` varchar(64) NOT NULL,
+  `wdfId` int(11) NOT NULL,
   `url` varchar(1024) NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -264,11 +180,36 @@ CREATE TABLE `pageviews` (
 --
 
 CREATE TABLE `pagewatch` (
-  `wdfId` varchar(64) NOT NULL,
+  `wdfId` int(11) NOT NULL,
   `url` varchar(512) NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `amount` int(11) NOT NULL,
   `id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `precalc_topics`
+--
+
+CREATE TABLE `precalc_topics` (
+  `url` varchar(1024) NOT NULL,
+  `topics` varchar(4096) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `precalc_trackers`
+--
+
+CREATE TABLE `precalc_trackers` (
+  `wdfId` int(11) NOT NULL,
+  `urlDomain` varchar(400) NOT NULL,
+  `reqDomain` varchar(400) NOT NULL,
+  `amount` int(11) NOT NULL,
+  `size` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -279,14 +220,41 @@ CREATE TABLE `pagewatch` (
 
 CREATE TABLE `users` (
   `wdfId` int(11) NOT NULL,
-  `wdfToken` varchar(64) DEFAULT NULL,
-  `facebookId` bigint(20) NOT NULL,
-  `facebookAccessToken` varchar(255) DEFAULT NULL
+  `wdfToken` varchar(64) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_interests`
+--
+
+CREATE TABLE `user_interests` (
+  `wdfId` int(11) NOT NULL,
+  `interest_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_tags`
+--
+
+CREATE TABLE `user_tags` (
+  `wdfId` int(11) NOT NULL,
+  `interest_id` int(11) NOT NULL,
+  `word` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Index pour les tables exportées
 --
+
+--
+-- Index pour la table `computed_bestwords`
+--
+ALTER TABLE `computed_bestwords`
+  ADD PRIMARY KEY (`url`,`word`);
 
 --
 -- Index pour la table `computed_df`
@@ -310,7 +278,9 @@ ALTER TABLE `computed_tfidf`
 -- Index pour la table `content`
 --
 ALTER TABLE `content`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `wdfId` (`wdfId`),
+  ADD KEY `url` (`url`);
 
 --
 -- Index pour la table `content_text`
@@ -319,10 +289,16 @@ ALTER TABLE `content_text`
   ADD PRIMARY KEY (`url`);
 
 --
--- Index pour la table `event`
+-- Index pour la table `current_url_topics`
 --
-ALTER TABLE `event`
-  ADD PRIMARY KEY (`id`);
+ALTER TABLE `current_url_topics`
+  ADD PRIMARY KEY (`url`,`topic`);
+
+--
+-- Index pour la table `current_user_tags`
+--
+ALTER TABLE `current_user_tags`
+  ADD PRIMARY KEY (`wdfId`,`topic_id`);
 
 --
 -- Index pour la table `interests`
@@ -331,31 +307,68 @@ ALTER TABLE `interests`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Index pour la table `lda_topics`
+--
+ALTER TABLE `lda_topics`
+  ADD PRIMARY KEY (`topic_id`,`word`);
+
+--
 -- Index pour la table `pagerequests`
 --
 ALTER TABLE `pagerequests`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `urlDomain` (`urlDomain`),
+  ADD KEY `requestDomain` (`requestDomain`),
+  ADD KEY `wdfId` (`wdfId`),
+  ADD KEY `wdfId_2` (`wdfId`),
+  ADD KEY `wdfId_3` (`wdfId`);
 
 --
 -- Index pour la table `pageviews`
 --
 ALTER TABLE `pageviews`
-  ADD PRIMARY KEY (`wdfId`,`url`,`timestamp`);
+  ADD PRIMARY KEY (`wdfId`,`url`,`timestamp`),
+  ADD KEY `wdfId` (`wdfId`);
 
 --
 -- Index pour la table `pagewatch`
 --
 ALTER TABLE `pagewatch`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `wdfId` (`wdfId`);
+
+--
+-- Index pour la table `precalc_topics`
+--
+ALTER TABLE `precalc_topics`
+  ADD PRIMARY KEY (`url`);
+
+--
+-- Index pour la table `precalc_trackers`
+--
+ALTER TABLE `precalc_trackers`
+  ADD PRIMARY KEY (`wdfId`,`urlDomain`,`reqDomain`),
+  ADD KEY `wdfId` (`wdfId`);
 
 --
 -- Index pour la table `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`wdfId`),
-  ADD UNIQUE KEY `facebookId` (`facebookId`),
-  ADD KEY `wdfIf` (`wdfId`),
-  ADD KEY `facebookId_2` (`facebookId`);
+  ADD KEY `wdfIf` (`wdfId`);
+
+--
+-- Index pour la table `user_interests`
+--
+ALTER TABLE `user_interests`
+  ADD PRIMARY KEY (`wdfId`,`interest_id`),
+  ADD KEY `interest_id` (`interest_id`);
+
+--
+-- Index pour la table `user_tags`
+--
+ALTER TABLE `user_tags`
+  ADD PRIMARY KEY (`wdfId`,`interest_id`,`word`);
 
 --
 -- AUTO_INCREMENT pour les tables exportées
@@ -365,12 +378,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT pour la table `content`
 --
 ALTER TABLE `content`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1024;
---
--- AUTO_INCREMENT pour la table `event`
---
-ALTER TABLE `event`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=872;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9853;
 --
 -- AUTO_INCREMENT pour la table `interests`
 --
@@ -380,17 +388,76 @@ ALTER TABLE `interests`
 -- AUTO_INCREMENT pour la table `pagerequests`
 --
 ALTER TABLE `pagerequests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=198675;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2912459;
 --
 -- AUTO_INCREMENT pour la table `pagewatch`
 --
 ALTER TABLE `pagewatch`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7181;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86978;
 --
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `wdfId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `wdfId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=164;
+--
+-- Contraintes pour les tables exportées
+--
+
+--
+-- Contraintes pour la table `content`
+--
+ALTER TABLE `content`
+  ADD CONSTRAINT `content_ibfk_1` FOREIGN KEY (`wdfId`) REFERENCES `users` (`wdfId`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `content_text`
+--
+ALTER TABLE `content_text`
+  ADD CONSTRAINT `content_text_ibfk_1` FOREIGN KEY (`url`) REFERENCES `content` (`url`);
+
+--
+-- Contraintes pour la table `current_user_tags`
+--
+ALTER TABLE `current_user_tags`
+  ADD CONSTRAINT `current_user_tags_ibfk_1` FOREIGN KEY (`wdfId`) REFERENCES `users` (`wdfId`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `pagerequests`
+--
+ALTER TABLE `pagerequests`
+  ADD CONSTRAINT `pagerequests_ibfk_1` FOREIGN KEY (`wdfId`) REFERENCES `users` (`wdfId`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `pageviews`
+--
+ALTER TABLE `pageviews`
+  ADD CONSTRAINT `pageviews_ibfk_1` FOREIGN KEY (`wdfId`) REFERENCES `users` (`wdfId`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `pagewatch`
+--
+ALTER TABLE `pagewatch`
+  ADD CONSTRAINT `pagewatch_ibfk_1` FOREIGN KEY (`wdfId`) REFERENCES `users` (`wdfId`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `precalc_trackers`
+--
+ALTER TABLE `precalc_trackers`
+  ADD CONSTRAINT `precalc_trackers_ibfk_1` FOREIGN KEY (`wdfId`) REFERENCES `users` (`wdfId`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `user_interests`
+--
+ALTER TABLE `user_interests`
+  ADD CONSTRAINT `user_interests_ibfk_1` FOREIGN KEY (`wdfId`) REFERENCES `users` (`wdfId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `user_interests_ibfk_2` FOREIGN KEY (`interest_id`) REFERENCES `interests` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `user_tags`
+--
+ALTER TABLE `user_tags`
+  ADD CONSTRAINT `user_tags_ibfk_1` FOREIGN KEY (`wdfId`) REFERENCES `users` (`wdfId`) ON DELETE CASCADE ON UPDATE CASCADE;
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
