@@ -94,10 +94,6 @@ cleanUserInterestsSQL = """DELETE FROM `user_interests` where user_id = %s"""
 addUserInterestSQL = """INSERT IGNORE INTO `user_interests` (user_id, interest_id) VALUES (%s, %s)"""
 getUserInterestsSQL = """SELECT * FROM `user_interests` WHERE user_id = %s"""
 
-setUrlTopicSQL = """INSERT INTO `url_topics` (url, topic) VALUES (%s, %s)"""
-getUrlsTopicSQL = """SELECT * FROM `url_topics`"""
-emptyUrlTopicSQL = """TRUNCATE url_topics"""
-
 setLdaTopicSQL = """INSERT IGNORE INTO `lda_topics` (`topic_id`, `word`, `value`) VALUES (%s, %s, %s)"""
 getLdaTopicsSQL = """SELECT * FROM `lda_topics`"""
 emptyLdaTopicsSQL = """TRUNCATE lda_topics"""
@@ -342,11 +338,6 @@ class MySQL:
         with self.db.cursor(pymysql.cursors.DictCursor) as db:
             db.execute(oldestEntrySQL, (wdfId))
             return db.fetchone()
-
-    def getUrlsTopic(self):
-        with self.db.cursor(pymysql.cursors.DictCursor) as db:
-            db.execute(getUrlsTopicSQL)
-            return db.fetchall()
 
     def getCurrentUrlsTopic(self):
         with self.db.cursor(pymysql.cursors.DictCursor) as db:

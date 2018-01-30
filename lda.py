@@ -96,7 +96,6 @@ class LDAWDF:
                     for docTopic in docTopics:
                         result2.append((element['url'], docTopic[0], str(docTopic[1])))
             db.emptyUrlsTopic()
-            db.setUrlsTopic(result)
             db.emptyCurrentUrlsTopic()
             db.emptyCurrentUserTags()
             db.setCurrentUrlsTopic(result2)
