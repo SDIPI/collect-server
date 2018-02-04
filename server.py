@@ -565,24 +565,6 @@ def getUrlsTopic(wdfId):
 
 # Trackers
 
-@app.route("/api/getMostPresentTrackers", methods=['GET'])  # Call from interface
-@userConnected
-@apiMethod
-def getMostPresentTrackers(wdfId):
-    mysql = mysqlConnection()
-    with mysql as db:
-        trackers = db.getMostPresentTrackers(wdfId)
-    return jsonify(trackers)
-
-@app.route("/api/getMostRevealingDomains", methods=['GET'])  # Call from interface
-@userConnected
-@apiMethod
-def getMostRevealingDomains(wdfId):
-    mysql = mysqlConnection()
-    with mysql as db:
-        trackers = db.getMostRevealingDomains(wdfId)
-    return jsonify(trackers)
-
 @app.route("/api/getTrackers", methods=['GET'])  # Call from interface
 @userConnected
 @apiMethod

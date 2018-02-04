@@ -384,17 +384,6 @@ class MySQL:
         self.db.commit()
 
     # Trackers
-    def getMostPresentTrackers(self, wdfId):
-        getMostPresentTrackersSQL = """SELECT requestDomain, COUNT(urlDomain) AS count FROM `pagerequests` WHERE wdfId = %s AND `urlDomain` != `requestDomain` GROUP BY requestDomain ORDER BY count DESC LIMIT 100"""
-        with self.db.cursor() as db:
-            db.execute(getMostPresentTrackersSQL % wdfId)
-            return db.fetchall()
-
-    def getMostRevealingDomains(self, wdfId):
-        getMostRevealingDomainsSQL = """SELECT urlDomain, COUNT(requestDomain) AS count FROM `pagerequests` WHERE wdfId = %s AND `urlDomain` != `requestDomain` GROUP BY urlDomain ORDER BY count DESC LIMIT 100"""
-        with self.db.cursor() as db:
-            db.execute(getMostRevealingDomainsSQL % wdfId)
-            return db.fetchall()
 
     def getTrackers(self, wdfId):
         getTrackersSQL = """SELECT * FROM `precalc_trackers` WHERE wdfId = %s AND `urlDomain` != `reqDomain`"""
