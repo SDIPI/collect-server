@@ -31,23 +31,6 @@ from utils import clean_html
 
 DEBUG = True
 
-OAUTH2_CLIENT_ID = '1921967898054907'
-OAUTH2_CLIENT_SECRET = os.environ['COLLECTSERVER_FACEBOOKSECRET']
-OAUTH2_SCOPE = ['public_profile']
-API_BASE_URL = 'https://graph.facebook.com/v2.10'
-OAUTH2_REDIRECT_URI = 'http://df.sdipi.ch:5000/auth'
-
-AUTHORIZATION_URL = 'https://www.facebook.com/v2.10/dialog/oauth'
-TOKEN_URL = API_BASE_URL + '/oauth/access_token'
-
-if 'http://' in OAUTH2_REDIRECT_URI:
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
-
-def token_updater(token):
-    session['oauth2_token'] = token
-
-
 datePattern = re.compile("^\d{1,4}-\d{1,2}-\d{1,2}$")
 
 filteredSitesParser = ConfigParser()
@@ -79,26 +62,10 @@ def userConnected(method):
     return with_userConnected
 
 
-def facebook_session(token=None, state=None):
-    return OAuth2Session(
-        client_id=OAUTH2_CLIENT_ID,
-        token=token,
-        state=state,
-        scope=OAUTH2_SCOPE,
-        redirect_uri=OAUTH2_REDIRECT_URI,
-        auto_refresh_kwargs={
-            'client_id': OAUTH2_CLIENT_ID,
-            'client_secret': OAUTH2_CLIENT_SECRET
-        },
-        auto_refresh_url=TOKEN_URL,
-        token_updater=token_updater)
-
-
 app = Flask(__name__)
 Compress(app)
 CORS(app)
 app.debug = True
-app.config['SECRET_KEY'] = OAUTH2_CLIENT_SECRET
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 
@@ -228,39 +195,6 @@ def first():
 @app.route("/")  # Index
 def root():
     return render_template("layout.html", contentTemplate="index.html")
-
-
-@app.route("/facebookauth")  # Redirection to Facebook authorization page
-def facebookauth():
-    facebook = facebook_session()
-    authorization_url, state = facebook.authorization_url(AUTHORIZATION_URL)
-    session['oauth2_state'] = state
-    return redirect(authorization_url)
-
-
-@app.route("/auth")  # Redirect from Facebook auth
-def auth():
-    if request.values.get('error'):
-        return request.values['error']
-    # Get facebook token + user infos
-    try:
-        facebook = facebook_session(state=session.get('oauth2_state'))
-        token = facebook.fetch_token(
-            TOKEN_URL,
-            client_secret=OAUTH2_CLIENT_SECRET,
-            authorization_response=request.url.strip())
-        user = facebook.get(API_BASE_URL + '/me').json()
-        # Save infos in db
-        wdf_token = secrets.token_hex(32)
-        with mysqlConnection() as db:
-            db.newOrUpdateUser(user['id'], token['access_token'], wdf_token)
-
-        response = redirect('/authsuccess?code=' + wdf_token)
-        response.set_cookie('wdfToken', wdf_token, 60 * 60 * 24 * 365 * 10, domain=".sdipi.ch")
-        return response
-
-    except MissingCodeError:
-        return render_template("layout.html", warningMessage="Missing code.")
 
 
 @app.route("/anonauth") # Create a new anonymous account
