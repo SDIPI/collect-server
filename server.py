@@ -4,7 +4,6 @@
 This file is part of wdf-server.
 """
 import math
-import os
 import subprocess
 import re
 import json
@@ -14,14 +13,13 @@ from threading import Thread
 import lxml.html
 import requests
 import secrets
-from flask import Flask, render_template, request, session, redirect, abort, current_app, Response, jsonify
+from flask import Flask, render_template, request, redirect, abort, current_app, Response, jsonify
 from configparser import ConfigParser, NoOptionError
 from flask_compress import Compress
 from flask_cors import CORS
 from langdetect import detect
 from lxml.html.clean import Cleaner
 from oauthlib.oauth2 import MissingCodeError
-from requests_oauthlib import OAuth2Session
 from stop_words import get_stop_words
 from urllib.parse import urlparse
 
@@ -591,3 +589,23 @@ def run(ip, port, db_host, db_user, db_pass, db_name, lda):
         pass
 
     app.run(host=ip, port=port, threaded=True)
+
+
+# Config file parsing
+config = ConfigParser()
+config.read('/home/ubuntu/collect-server/config.ini')
+
+db_host = config.get('database', 'host')
+db_user = config.get('database', 'user')
+db_pass = config.get('database', 'password')
+db_name = config.get('database', 'name')
+
+app.config['DB_HOST'] = db_host
+app.config['DB_USER'] = db_user
+app.config['DB_PASS'] = db_pass
+app.config['DB_NAME'] = db_name
+app.config['LDA_SUBFOLDER'] = 'backup8'
+
+connection = MySQL(db_host, db_user, db_pass, db_name)
+with connection as test:
+    pass
