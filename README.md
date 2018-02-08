@@ -23,8 +23,6 @@ python3.6 -m nltk.downloader all
 You'll also need to set some parameters :
 
 - Rename the **file** `config.ini.example` to `config.ini` and fill in the informations to connect to your MySQL database.
-- Set the Facebook App ID the **variable** [`OAUTH2_CLIENT_ID` in server.py](server.py#L20).
-- Set the Facebook App Secret in an **environment variable** named `COLLECTSERVER_FACEBOOKSECRET`.
 
 <!-- No tests yet : This will be useful later
 
