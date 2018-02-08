@@ -48,9 +48,9 @@ INSERT INTO computed_bestwords
 
 # Interface SQL
 mostVisitedSitesTemplateSQL1 = 'SELECT url, COUNT(*) AS count FROM `pageviews` WHERE `wdfId`=%s'
-mostVisitedSitesTemplateSQL2 = ' GROUP BY `url` LIMIT 200'
+mostVisitedSitesTemplateSQL2 = ' GROUP BY `url` ORDER BY count DESC LIMIT 500'
 mostWatchedSitesTemplateSQL1 = 'SELECT `wdfId`, `url`, CAST(SUM(`amount`) AS UNSIGNED) AS time FROM `pagewatch` WHERE wdfId=%s'
-mostWatchedSitesTemplateSQL2 = ' GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC LIMIT 200'
+mostWatchedSitesTemplateSQL2 = ' GROUP BY wdfId, url ORDER BY SUM(`amount`) DESC LIMIT 500'
 
 oldestEntrySQL = 'SELECT DATE(`timestamp`) AS date FROM `pageviews` WHERE `wdfId`=%s ORDER BY `timestamp` ASC LIMIT 1'
 
